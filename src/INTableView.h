@@ -1,95 +1,85 @@
 //
 //  INTableView.h
-//  iNtra
+//  INTableView
 //
-//  Created by Allan on 9/7/11.
-//  Copyright 2011 Allan. All rights reserved.
+//  Created by Allan Barbato on 9/7/11.
+//  Copyright 2011 Allan Barbato. All rights reserved.
 //
 
 #import <Foundation/Foundation.h>
-#import "INTableViewSection.h"
+
 #import "INTableViewCell.h"
 #import "INTableViewTextCell.h"
-#import "INTableViewTextFieldCell.h"
-#import "INTableViewCellTitleTextView.h"
 #import "INTableViewLoadingCell.h"
-#import "INTableViewImageCell.h"
+#import "INTableViewInputCell.h"
+
+#define BOTTOM_SCROLL_RELOAD_DISTANCE 10
+
+@class INTableViewSection;
+
+@protocol INTableViewDelegate;
 
 @interface INTableView : UITableView
 <UITableViewDelegate, UITableViewDataSource>
 {
-    UITableView *tableView;
-    NSMutableArray *tableViewSections;
-    NSInteger sectionIndex;
-    id target;
-    BOOL showSidebar;
+    UITableView*            _tableView;
+    NSMutableArray*         _tableViewSections;
+    id<INTableViewDelegate> _target;
 }
 
+// Property
 @property (nonatomic, retain) UITableView *tableView;
 @property (nonatomic, assign, getter = sidebarIsShown) BOOL showSidebar;
-@property (nonatomic, retain) NSMutableArray *tableViewSections;
+@property (nonatomic, assign) id<INTableViewDelegate> target;
 
-- (id)initWithTableView:(UITableView*)aTableView target:(id)aTarget;
+// Custom Initialisation
+- (id)initWithTableView:(UITableView*)aTableView target:(id<INTableViewDelegate>)aTarget;
+- (id)initWithTableView:(UITableView *)aTableView cells:(NSArray*)cells target:(id<INTableViewDelegate>)aTarget;
 
-+ (id)tableWithTableView:(UITableView*)aTableView target:(id)target;
-
-- (id)initWithTableView:(UITableView *)aTableView cells:(NSArray*)cells target:(id)aTarget;
-+ (id)tableWithTableView:(UITableView *)aTableView cells:(NSArray*)cells target:(id)aTarget;
-
+// Editing Sections
 - (void)addSectionWithTitle:(NSString*)title andFooter:(NSString*)footer;
-
+- (void)addSectionWithHeaderView:(UIView*)header footerView:(UIView*)footer;
 - (void)addSectionAtIndex:(NSInteger)index withTitle:(NSString *)title andFooter:(NSString *)footer;
-
-- (void)addCell:(INTableViewCell*)cell;
-
-- (void)addCell:(INTableViewCell *)cell atIndex:(NSIndexPath*)index;
+- (void)addSectionAtIndex:(NSInteger)index withHeaderView:(UIView*)header andFooterView:(UIView*)footer;
+- (void)setCells:(NSArray*)cells forSectionAtIndex:(NSInteger)index;
 
 - (void)setFooter:(NSString*)footer forSectionAtIndex:(NSInteger)index;
-
 - (void)setTitle:(NSString*)title forSectionAtIndex:(NSInteger)index;
+- (void)setFooterView:(UIView*)footer forSectionAtIndex:(NSInteger)index;
+- (void)setHeaderView:(UIView*)header forSectionAtIndex:(NSInteger)index;
 
-- (INTableViewCell*)cellForRow:(NSInteger)row inSection:(NSInteger)section;
-
-- (void)removeAllCells;
-
+// Editing Cells
+- (void)addCell:(INTableViewCell*)cell;
+- (void)addCell:(INTableViewCell *)cell atIndex:(NSInteger)index inSection:(NSInteger)sectionIndex;
 - (void)removeCellAtIndex:(NSInteger)index inSection:(NSInteger)section;
+- (void)removeCellAtIndex:(NSInteger)index inSection:(NSInteger)section animation:(UITableViewRowAnimation)animation;
+- (void)removeAllCellsInSection:(NSInteger)section;
+- (void)removeAllCellsInSection:(NSInteger)section animation:(UITableViewRowAnimation)animation;
+- (void)removeAllCells;
+- (void)removeAllCellsWithAnimation:(UITableViewRowAnimation)animation;
 
-- (NSInteger)countOfCellsInSection:(NSInteger)section;
+// Cells infos
+- (INTableViewCell*)cellForRow:(NSUInteger)row inSection:(NSUInteger)section;
+- (const NSArray*)cellsInSection:(NSUInteger)section;
+- (NSUInteger)countOfCellsInSection:(NSUInteger)section;
+- (NSUInteger)countOfCells;
+// Same as above
+- (NSUInteger)numberOfCellsInSection:(NSUInteger)section;
+- (NSUInteger)numberOfCells;
 
-- (NSInteger)countOfCells;
+// TableView Method
+- (void)scrollToTopAnimated:(BOOL)animated;
+- (void)scrollToBottomAnimated:(BOOL)animated;
 
-- (INTableViewCell*)defaultCellWithTitle:(NSString*)title andSelector:(SEL)selector;
+@end
 
-- (INTableViewCell*)defaultCellWithTitle:(NSString*)title andSelector:(SEL)selector argument:(id)argument;
+@protocol INTableViewDelegate <NSObject>
 
-- (INTableViewCell*)defaultCellWithTitle:(NSString*)title andSelector:(SEL)selector detailText:(NSString*)detail;
+@optional
+- (void)tableViewDidScroll:(INTableView*)tableView;
+- (void)tableViewWillBeginDecelerating:(INTableView*)tableView;
 
-- (INTableViewCell*)subtitleCellWithTitle:(NSString*)title andSelector:(SEL)selector;
-
-- (INTableViewCell*)subtitleCellWithTitle:(NSString*)title andSelector:(SEL)selector argument:(id)argument;
-
-- (INTableViewCell*)subtitleCellWithTitle:(NSString*)title andSelector:(SEL)selector detailText:(NSString*)detail;
-
-- (INTableViewCell*)actionCellWithTitle:(NSString*)title andSelector:(SEL)selector;
-
-- (INTableViewCell*)actionCellWithTitle:(NSString*)title andSelector:(SEL)selector argument:(id)argument;
-
-- (INTableViewCell*)pushCellWithTitle:(NSString*)title andSelector:(SEL)selector;
-
-- (INTableViewCell*)pushCellWithTitle:(NSString*)title andSelector:(SEL)selector detailText:(NSString*)detailText;
-
-- (INTableViewCell*)pushCellWithTitle:(NSString*)title andSelector:(SEL)selector detailText:(NSString*)detailText argument:(id)argument;
-
-- (INTableViewCell*)pushSubtitledCellWithTitle:(NSString*)title andSelector:(SEL)selector detailText:(NSString*)detailText argument:(id)argument;
-
-- (INTableViewCell*)textCellWithText:(NSString*)text editable:(BOOL)edit delegate:(id)delegate;
-
-- (INTableViewCell*)textFieldCellWithText:(NSString*)text prompt:(NSString*)prompt delegate:(id)delegate;
-
-- (INTableViewCell*)titleTextViewCellWithTitle:(NSString*)title text:(NSString*)text;
-
-- (INTableViewLoadingCell*)loadingCellWithloadingLabel:(NSString*)label;
-
-- (INTableViewCell*)imageCellWithImageNamed:(NSString*)image withTitle:(NSString*)title andDetailText:(NSString*)detail;
+- (void)tableViewDidReloadFromBottom:(INTableView*)tableView;
+- (void)tableViewDidScrollToBottom:(INTableView*)tableView;
 
 @end

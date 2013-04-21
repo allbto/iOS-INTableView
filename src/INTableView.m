@@ -1,53 +1,88 @@
 //
 //  INTableView.m
-//  iNtra
+//  INTableView
 //
-//  Created by Allan on 9/7/11.
-//  Copyright 2011 Allan. All rights reserved.
+//  Created by Allan Barbato on 9/7/11.
+//  Copyright 2011 Allan Barbato. All rights reserved.
 //
 
 #import "INTableView.h"
 
+#import "INTableViewSection.h"
+
 @interface INTableView ()
 
+@property (nonatomic, retain) NSMutableArray *tableViewSections;
 
+- (void)initialize;
 
 @end
 
 @implementation INTableView
 
-@synthesize tableView;
-@synthesize tableViewSections;
-@synthesize showSidebar;
+@synthesize tableView = _tableView;
+@synthesize showSidebar = _showSidebar;
+@synthesize target = _target;
+
+#pragma mark - Custom Setter/Getter
 
 - (void)setShowSidebar:(BOOL)doShowSidebar
 {
-    showSidebar = doShowSidebar;
-    if (showSidebar)
+    _showSidebar = doShowSidebar;
+    if (_showSidebar)
         [self reloadData];
+}
+
+#pragma mark - NSObject
+
+- (void)initialize
+{
+    self.tableView = self;
+    self.tableView.delegate = self;
+    self.tableView.dataSource = self;
+    self.tableViewSections = [NSMutableArray array];
+}
+
+- (id)init
+{
+    self = [super init];
+    if (self)
+        [self initialize];
+    return self;
+}
+
+- (id)initWithCoder:(NSCoder *)aDecoder
+{
+    self = [super initWithCoder:aDecoder];
+    if (self)
+        [self initialize];
+    return self;
+}
+
+- (id)initWithFrame:(CGRect)frame
+{
+    self = [super initWithFrame:frame];
+    if (self)
+        [self initialize];
+    return self;
 }
 
 - (id)initWithFrame:(CGRect)frame style:(UITableViewStyle)style
 {
     self = [super initWithFrame:frame style:style];
     if (self)
-    {
-        self.tableView = self;
-        self.tableView.delegate = self;
-        self.tableView.dataSource = self;
-        self.tableViewSections = [NSMutableArray array];
-    }
+        [self initialize];
     return self;
 }
 
-- (id)initWithTableView:(UITableView*)aTableView target:(id)aTarget
+- (id)initWithTableView:(UITableView*)aTableView target:(id<INTableViewDelegate>)aTarget
 {
     self = [super initWithFrame:aTableView.frame style:UITableViewStylePlain];
     
     if (self)
     {
         self.autoresizingMask = UIViewAutoresizingFlexibleHeight;
-        target = aTarget;
+        self.target = aTarget;
         aTableView.delegate = self;
         aTableView.dataSource = self;
         self.tableView = aTableView;
@@ -56,26 +91,28 @@
     return self;
 }
 
-+ (id)tableWithTableView:(UITableView*)aTableView target:(id)aTarget
-{ return [[INTableView alloc] initWithTableView:aTableView target:aTarget]; }
-
-- (id)initWithTableView:(UITableView *)aTableView cells:(NSArray*)cells target:(id)aTarget
+- (id)initWithTableView:(UITableView *)aTableView cells:(NSArray*)cells target:(id<INTableViewDelegate>)aTarget
 {
-    self = [INTableView tableWithTableView:aTableView target:aTarget];
+    self = [self initWithTableView:aTableView target:aTarget];
     
     if (self)
     {
-        INTableViewSection *section = [[INTableViewSection alloc] initWithTitle:@"" andFooter:@""];
-        [section.tableViewCells setArray:cells];
+        INTableViewSection *section = [[[INTableViewSection alloc] initWithHeaderView:[[[UIView alloc] init] autorelease] footerView:nil] autorelease];
+        
+        [section setCells:cells];
         [self.tableViewSections addObject:section];
     }
     return self;
 }
 
-+ (id)tableWithTableView:(UITableView *)aTableView cells:(NSArray*)cells target:(id)aTarget
-{ return [[INTableView alloc] initWithTableView:aTableView cells:cells target:aTarget]; }
+- (void)dealloc
+{
+    [_tableViewSections release];
+    [_tableView release];
+    [super dealloc];
+}
 
-
+#pragma mark - Section Editing
 
 - (void)addSectionWithTitle:(NSString*)title andFooter:(NSString*)footer
 {
@@ -91,45 +128,47 @@
     [self.tableViewSections insertObject:section atIndex:index];
 }
 
-- (void)addCell:(INTableViewCell*)cell
+- (void)addSectionWithHeaderView:(UIView*)header footerView:(UIView*)footer
 {
-    if (cell)
-    {
-        if ([self.tableViewSections count] == 0)
-            [self addSectionWithTitle:@"" andFooter:@""];
-        
-        INTableViewSection *section = [self.tableViewSections lastObject];
-        [section.tableViewCells addObject:cell];
-        [self.tableView reloadData];
-    }
+    INTableViewSection *section = [[[INTableViewSection alloc] initWithHeaderView:header footerView:footer] autorelease];
+
+    [self.tableViewSections addObject:section];
 }
 
-- (void)addCell:(INTableViewCell *)cell atIndex:(NSIndexPath*)index
+- (void)addSectionAtIndex:(NSInteger)index withHeaderView:(UIView*)header andFooterView:(UIView*)footer
 {
-    if (cell)
-    {
-        INTableViewSection *section = [self.tableViewSections objectAtIndex:index.section];
-        [section.tableViewCells insertObject:cell atIndex:index.row];
-        [self.tableView insertRowsAtIndexPaths:[NSArray arrayWithObject:index] withRowAnimation:UITableViewRowAnimationBottom];
-        [self.tableView reloadData];
-    }
+    INTableViewSection *section = [[[INTableViewSection alloc] initWithHeaderView:header footerView:footer] autorelease];
+    
+    [self.tableViewSections insertObject:section atIndex:index];
 }
 
-- (void)removeAllCells
+- (void)setCells:(NSArray*)cells forSectionAtIndex:(NSInteger)index
 {
-    if (self.tableView)
+    INTableViewSection* section = nil;
+    
+    if (self.tableViewSections.count == 0)
     {
-        [self.tableViewSections removeAllObjects];
-        [self.tableView reloadData];
+        section = [[[INTableViewSection alloc] initWithHeaderView:[[[UIView alloc] init] autorelease] footerView:nil] autorelease];
+        [self.tableViewSections addObject:section];
     }
+    
+    if (index >= self.tableViewSections.count)
+        index = self.tableViewSections.count - 1;
+    
+    section = [self.tableViewSections objectAtIndex:index];
+    [section setCells:cells];
+    [self reloadData];
 }
 
-- (void)removeCellAtIndex:(NSInteger)index inSection:(NSInteger)section
+
+- (void)setFooterView:(UIView*)footer forSectionAtIndex:(NSInteger)index
 {
-    [[[self.tableViewSections objectAtIndex:section] tableViewCells] removeObjectAtIndex:index];
-    [self.tableView deleteRowsAtIndexPaths:[NSArray arrayWithObject:[NSIndexPath indexPathForRow:index inSection:section]]
-                     withRowAnimation:UITableViewRowAnimationFade];
-    [self.tableView reloadData];
+    [[self.tableViewSections objectAtIndex:index] setFooterView:footer];
+}
+
+- (void)setHeaderView:(UIView*)header forSectionAtIndex:(NSInteger)index
+{
+    [[self.tableViewSections objectAtIndex:index] setHeaderView:header];
 }
 
 - (void)setTitle:(NSString*)title forSectionAtIndex:(NSInteger)index
@@ -142,219 +181,157 @@
     [[self.tableViewSections objectAtIndex:index] setFooter:footer];
 }
 
-- (INTableViewCell*)cellForRow:(NSInteger)row inSection:(NSInteger)section
+#pragma mark - Cells Editing
+
+//TODO: Add cell with animation
+- (void)addCell:(INTableViewCell*)cell
 {
-    return [[[self.tableViewSections objectAtIndex:section] tableViewCells] objectAtIndex:row];
+    if (cell)
+    {
+        if ([self.tableViewSections count] == 0)
+            [self addSectionWithHeaderView:[[[UIView alloc] init] autorelease] footerView:nil];
+        
+        INTableViewSection *section = [self.tableViewSections lastObject];
+        
+        [section addCell:cell];
+        [self reloadData];
+    }
+}
+- (void)addCell:(INTableViewCell *)cell atIndex:(NSInteger)index inSection:(NSInteger)sectionIndex
+{
+    if (cell)
+    {
+        INTableViewSection *section = [self.tableViewSections objectAtIndex:sectionIndex];
+
+        [section addCell:cell atIndex:index];
+        [self.tableView insertRowsAtIndexPaths:[NSArray arrayWithObject:[NSIndexPath indexPathForRow:index inSection:sectionIndex]] withRowAnimation:UITableViewRowAnimationBottom];
+        [self reloadData];
+    }
+}
+//TODO: Check if section is correct
+- (void)removeCellAtIndex:(NSInteger)index inSection:(NSInteger)section
+{
+    [[self.tableViewSections objectAtIndex:section] removeCellAtIndex:index];
+    [self.tableView reloadData];
 }
 
-- (NSInteger)countOfCellsInSection:(NSInteger)section
+- (void)removeCellAtIndex:(NSInteger)index inSection:(NSInteger)section animation:(UITableViewRowAnimation)animation
 {
-    return [[[self.tableViewSections objectAtIndex:section] tableViewCells] count];
+    [[self.tableViewSections objectAtIndex:section] removeCellAtIndex:index];
+    [self.tableView deleteRowsAtIndexPaths:[NSArray arrayWithObject:[NSIndexPath indexPathForRow:index inSection:section]]
+                          withRowAnimation:animation];
+    [self.tableView reloadData];
 }
 
-- (NSInteger)countOfCells
+- (void)removeAllCellsInSection:(NSInteger)section
+{
+    [[self.tableViewSections objectAtIndex:section] removeAllCells];
+    [self.tableView reloadData];
+}
+
+- (void)removeAllCellsInSection:(NSInteger)section animation:(UITableViewRowAnimation)animation
+{
+    NSMutableArray* cellsIndexes = [NSMutableArray array];
+ 
+    for (int i = 0 ; i < [self.tableView numberOfRowsInSection:section] ; ++i)
+        [cellsIndexes addObject:[NSIndexPath indexPathForRow:i inSection:section]];
+ 
+    [[self.tableViewSections objectAtIndex:section] removeAllCells];
+    [self.tableView deleteRowsAtIndexPaths:cellsIndexes withRowAnimation:animation];
+    [self.tableView reloadData];
+}
+
+- (void)removeAllCells
+{
+    if (self.tableView)
+    {
+        [self.tableViewSections removeAllObjects];
+        [self.tableView reloadData];
+    }
+}
+
+- (void)removeAllCellsWithAnimation:(UITableViewRowAnimation)animation
+{
+    for (int i = 0 ; i < self.tableViewSections.count ; i++)
+    {
+        INTableViewSection* section = [self.tableViewSections objectAtIndex:i];
+        while ([section cellsCount] > 0)
+            [self removeCellAtIndex:0 inSection:i animation:animation];
+        [self.tableView deleteSections:[NSIndexSet indexSetWithIndex:i] withRowAnimation:animation];
+        [self.tableViewSections removeObjectAtIndex:i];
+        i--;
+    }
+}
+
+#pragma mark - Cell infos
+
+- (INTableViewCell*)cellForRow:(NSUInteger)row inSection:(NSUInteger)section
+{
+    return [[self.tableViewSections objectAtIndex:section] cellAtIndex:row];
+}
+
+- (const NSArray*)cellsInSection:(NSUInteger)section
+{
+    if (section >= [self.tableViewSections count])
+        return nil;
+    
+    return [[self.tableViewSections objectAtIndex:section] cells];
+}
+
+- (NSUInteger)countOfCellsInSection:(NSUInteger)section
+{
+    return [[self.tableViewSections objectAtIndex:section] cellsCount];
+}
+
+- (NSUInteger)countOfCells
 {
     int count = 0;
     
     for (INTableViewSection *section in self.tableViewSections)
-    {
-        count += [section.tableViewCells count];
-    }
+        count += [section cellsCount];
     return count;
 }
 
-#pragma mark - Cells
-
-- (INTableViewCell*)defaultCellWithTitle:(NSString*)title andSelector:(SEL)selector
+- (NSUInteger)numberOfCellsInSection:(NSUInteger)section
 {
-    INTableViewCell *cell = [[INTableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:@"Default" target:target selector:selector];
-    
-    if ([title isKindOfClass:[NSNull class]])
-        title = @"";
-    cell.textLabel.text = title;
-    if (!selector)
-        cell.selectionStyle = UITableViewCellSelectionStyleNone;
-    
-    return [cell autorelease];
+    return [self countOfCellsInSection:section];
 }
 
-- (INTableViewCell*)defaultCellWithTitle:(NSString*)title andSelector:(SEL)selector detailText:(NSString*)detail
+- (NSUInteger)numberOfCells
 {
-    INTableViewCell *cell = [self defaultCellWithTitle:title andSelector:selector];
-    cell.detailTextLabel.text = detail;
-    return cell;
-}
-
-- (INTableViewCell*)defaultCellWithTitle:(NSString*)title andSelector:(SEL)selector argument:(id)argument
-{
-    INTableViewCell *cell = [self defaultCellWithTitle:title andSelector:selector];
-    cell.argument = argument;
-    return cell;
-}
-
-- (INTableViewCell*)subtitleCellWithTitle:(NSString*)title andSelector:(SEL)selector
-{
-    INTableViewCell *cell = [[INTableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:@"Default" target:target selector:selector];
-    
-    if ([title isKindOfClass:[NSNull class]])
-        title = @"";
-    cell.textLabel.text = title;
-    if (!selector)
-        cell.selectionStyle = UITableViewCellSelectionStyleNone;
-    
-    return [cell autorelease];
-}
-
-- (INTableViewCell*)subtitleCellWithTitle:(NSString*)title andSelector:(SEL)selector detailText:(NSString*)detail
-{
-    INTableViewCell *cell = [self defaultCellWithTitle:title andSelector:selector];
-    cell.detailTextLabel.text = detail;
-    return cell;
-}
-
-- (INTableViewCell*)subtitleCellWithTitle:(NSString*)title andSelector:(SEL)selector argument:(id)argument
-{
-    INTableViewCell *cell = [self defaultCellWithTitle:title andSelector:selector];
-    cell.argument = argument;
-    return cell;
+    return [self countOfCells];
 }
 
 
-- (INTableViewCell*)actionCellWithTitle:(NSString*)title andSelector:(SEL)selector
+#pragma mark - TableView Method
+
+- (void)scrollToTopAnimated:(BOOL)animated
 {
-    INTableViewCell *cell = [[INTableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"Action" target:target selector:selector];
-    
-    if ([title isKindOfClass:[NSNull class]])
-        title = @"";
-    cell.textLabel.text = title;
-    cell.textLabel.textAlignment = UITextAlignmentCenter;
-    cell.textLabel.textColor = [UIColor colorWithRed:36/255.0 green:71/255.0 blue:113/255.0 alpha:1.0];
-    
-    return [cell autorelease];
+    if (_tableViewSections.count <= 0) return;
+    NSIndexPath *scrollIndexPath = [NSIndexPath indexPathForRow:0 inSection:0];
+    [[self tableView] scrollToRowAtIndexPath:scrollIndexPath atScrollPosition:UITableViewScrollPositionTop animated:animated];
 }
 
-- (INTableViewCell*)actionCellWithTitle:(NSString*)title andSelector:(SEL)selector argument:(id)argument
+- (void)scrollToBottomAnimated:(BOOL)animated
 {
-    INTableViewCell *cell = [self actionCellWithTitle:title andSelector:selector];
-    cell.argument = argument;
-    return cell;
-}
-
-- (INTableViewCell*)pushSubtitledCellWithTitle:(NSString*)title andSelector:(SEL)selector detailText:(NSString*)detailText argument:(id)argument
-{
-    INTableViewCell *cell = [[INTableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:@"Push" target:target selector:selector];
-    
-    if ([title isKindOfClass:[NSNull class]])
-        title = @"";
-    cell.textLabel.text = title;
-    cell.textLabel.textAlignment = UITextAlignmentLeft;
-    cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
-    cell.detailTextLabel.text = detailText;
-    cell.argument = argument;
-    
-    return [cell autorelease];
-}
-
-- (INTableViewCell*)pushCellWithTitle:(NSString*)title andSelector:(SEL)selector
-{
-    INTableViewCell *cell = [[INTableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:@"Push" target:target selector:selector];
-    
-    if ([title isKindOfClass:[NSNull class]])
-        title = @"";
-    cell.textLabel.text = title;
-    cell.textLabel.textAlignment = UITextAlignmentLeft;
-    cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
-    
-    return [cell autorelease];
-}
-
-- (INTableViewCell*)pushCellWithTitle:(NSString*)title andSelector:(SEL)selector detailText:(NSString*)detailText
-{
-    INTableViewCell *cell = [self pushCellWithTitle:title andSelector:selector];
-    cell.detailTextLabel.text = detailText;
-    return cell;
-}
-
-- (INTableViewCell*)pushCellWithTitle:(NSString*)title andSelector:(SEL)selector detailText:(NSString*)detailText argument:(id)argument
-{
-    INTableViewCell *cell = [self pushCellWithTitle:title andSelector:selector];
-    cell.argument = argument;
-    cell.detailTextLabel.text = detailText;
-    return cell;
-}
-
-- (INTableViewCell*)textFieldCellWithText:(NSString*)text prompt:(NSString*)prompt delegate:(id)delegate
-{
-    INTableViewTextFieldCell *cell = [[INTableViewTextFieldCell alloc] init];
-    if (!text || [text isKindOfClass:[NSNull class]])
-        text = @"";
-    if (!prompt || [text isKindOfClass:[NSNull class]])
-        prompt = @"";
-    cell.textField.text = text;
-    cell.textField.placeholder = prompt;
-    cell.delegate = delegate;
-    cell.argument = cell;
-    return (INTableViewCell*)cell;
-}
-
-- (INTableViewCell*)textCellWithText:(NSString*)text editable:(BOOL)edit delegate:(id)delegate
-{
-    INTableViewTextCell *cell = [[INTableViewTextCell alloc] initEditable:edit];
-    cell.textView.text = text;
-    cell.delegate = delegate;
-    cell.argument = cell;
-    cell.tableView = self.tableView;
-    return (INTableViewCell*)cell;
-}
-
-- (INTableViewCell*)titleTextViewCellWithTitle:(NSString*)title text:(NSString*)text
-{
-    INTableViewCellTitleTextView *cell = [[INTableViewCellTitleTextView alloc] init];
-    
-    if (!text || [text isKindOfClass:[NSNull class]])
-        text = @"";
-    if (!title || [text isKindOfClass:[NSNull class]])
-        title = @"";
-    cell.height = DEFAULT_CELL_HEIGHT * 2;
-    cell.title.text = title;
-    cell.textView.text = text;
-    return (INTableViewCell*)cell;
-}
-
-- (INTableViewLoadingCell*)loadingCellWithloadingLabel:(NSString*)label
-{
-    INTableViewLoadingCell *cell = [[INTableViewLoadingCell alloc] init];
-    
-    if (!label || [label isKindOfClass:[NSNull class]] || label.length == 0)
-        label = @"Loading...";
-    cell.loadingLabel.text = label;
-    cell.selectionStyle = UITableViewCellSelectionStyleNone;
-    return cell;
-}
-
-- (INTableViewImageCell*)imageCellWithImageNamed:(NSString*)image withTitle:(NSString*)title andDetailText:(NSString*)detail
-{
-    if (!title || ![title isKindOfClass:[NSString class]])
-        title = @"";
-    if (!detail || ![detail isKindOfClass:[NSString class]])
-        detail = @"";
-    
-    INTableViewImageCell *cell = [[INTableViewImageCell alloc] initWithImageNamed:image title:title detail:detail];
-    cell.target = target;
-    return cell;
+    if (_tableViewSections.count <= 0 || (_tableViewSections.count > 0 && [_tableViewSections.lastObject cellsCount] == 0)) return;
+    NSIndexPath *scrollIndexPath = [NSIndexPath indexPathForRow:([self.tableViewSections.lastObject cellsCount] - 1) inSection:self.tableViewSections.count - 1];
+    [[self tableView] scrollToRowAtIndexPath:scrollIndexPath atScrollPosition:UITableViewScrollPositionBottom animated:animated];
 }
 
 #pragma mark - TableView DataSource
 
 - (UITableViewCell*)tableView:(UITableView *)aTableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    [[[[self.tableViewSections objectAtIndex:indexPath.section] tableViewCells] objectAtIndex:indexPath.row] setIndexPath:indexPath];
-    return [[[self.tableViewSections objectAtIndex:indexPath.section] tableViewCells] objectAtIndex:indexPath.row];
+    INTableViewCell* cell = [[self.tableViewSections objectAtIndex:indexPath.section] cellAtIndex:indexPath.row];
+    
+    [cell setIndexPath:indexPath];
+    return cell;
 }
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    return [[[[self.tableViewSections objectAtIndex:indexPath.section] tableViewCells] objectAtIndex:indexPath.row] height];
+    return [[[self.tableViewSections objectAtIndex:indexPath.section] cellAtIndex:indexPath.row] cellHeight];
 }
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
@@ -364,7 +341,7 @@
 
 - (NSInteger)tableView:(UITableView *)aTableView numberOfRowsInSection:(NSInteger)section
 {
-    return [[[self.tableViewSections objectAtIndex:section] tableViewCells] count];
+    return [[self.tableViewSections objectAtIndex:section] cellsCount];
 }
 
 - (NSString*)tableView:(UITableView *)aTableView titleForHeaderInSection:(NSInteger)section
@@ -380,7 +357,8 @@
 - (NSArray *)sectionIndexTitlesForTableView:(UITableView *)tableView 
 {
     NSMutableArray *toReturn = [NSMutableArray array];
-    if (showSidebar)
+
+    if (_showSidebar)
     {
         for (INTableViewSection *section in self.tableViewSections)
         {
@@ -393,7 +371,7 @@
 
 - (NSInteger)tableView:(UITableView *)tableView sectionForSectionIndexTitle:(NSString *)title atIndex:(NSInteger)index
 {
-    if (showSidebar)
+    if (_showSidebar)
     {
         NSInteger row = 0;
         for (INTableViewSection *section in self.tableViewSections)
@@ -407,35 +385,62 @@
     return 0;
 }
 
-- (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath
+- (NSString *)tableView:(UITableView *)tableView titleForDeleteConfirmationButtonForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    if ([[[self.tableViewSections objectAtIndex:indexPath.section] tableViewCells] count] > indexPath.row)
-        return [[[[self.tableViewSections objectAtIndex:indexPath.section] tableViewCells] objectAtIndex:indexPath.row] allowEditing];
-    return NO;
+    return [[[self.tableViewSections objectAtIndex:indexPath.section] cellAtIndex:indexPath.row] slideToDeleteText];
 }
 
-- (BOOL)tableView:(UITableView *)tableView canMoveRowAtIndexPath:(NSIndexPath *)indexPath
+- (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    return [[[[self.tableViewSections objectAtIndex:indexPath.section] tableViewCells] objectAtIndex:indexPath.row] allowEditing];
+    return [[[self.tableViewSections objectAtIndex:indexPath.section] cellAtIndex:indexPath.row] canSlideToDelete];
 }
+
+/*- (BOOL)tableView:(UITableView *)tableView canMoveRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    return [[[self.tableViewSections objectAtIndex:indexPath.section] cellAtIndex:indexPath.row] allowEditing];
+}
+ */
 
 - (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    if (editingStyle == UITableViewCellEditingStyleDelete)
+    INTableViewCell *cell = [[self.tableViewSections objectAtIndex:indexPath.section] cellAtIndex:indexPath.row];
+
+    if (editingStyle == UITableViewCellEditingStyleDelete && [cell canSlideToDelete])
     {
         [self.tableView beginUpdates];
         
-        INTableViewCell *cell = [[[self.tableViewSections objectAtIndex:indexPath.section] tableViewCells] objectAtIndex:indexPath.row];
-        
-        if (cell.deleteSelector && cell.target && [cell.target respondsToSelector:cell.deleteSelector])
-        {
-            if (cell.deleteArgument)
-                [cell.target performSelector:cell.deleteSelector withObject:cell.deleteArgument];
-            else
-                [cell.target performSelector:cell.deleteSelector];
-        }
+        if (cell.deleteBlock)
+            cell.deleteBlock(cell);
         [self.tableView endUpdates];
     }
+}
+
+- (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section
+{
+    return [[self.tableViewSections objectAtIndex:section] headerView];
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section
+{
+    UIView* view = [[self.tableViewSections objectAtIndex:section] headerView];
+    
+    if (view) return view.bounds.size.height;
+
+    return DEFAULT_SECTION_HEIGHT;
+}
+
+- (UIView *)tableView:(UITableView *)tableView viewForFooterInSection:(NSInteger)section
+{
+    return [[self.tableViewSections objectAtIndex:section] footerView];
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForFooterInSection:(NSInteger)section
+{
+    UIView* view = [[self.tableViewSections objectAtIndex:section] footerView];
+    
+    if (view) return view.bounds.size.height;
+    
+    return DEFAULT_SECTION_HEIGHT;
 }
 
 #pragma mark - TableView Delegate
@@ -444,29 +449,66 @@
 {
     INTableViewCell *cell = (INTableViewCell *)[self cellForRow:indexPath.row inSection:indexPath.section];
     
-    if (cell.target && cell.accessorySelector && [cell.target respondsToSelector:cell.accessorySelector])
-    {
-        if (cell.accessoryArgument)
-            [cell.target performSelector:cell.accessorySelector withObject:cell.accessoryArgument];
-        else [cell.target performSelector:cell.accessorySelector];
-    }
+    if (cell.accessoryBlock)
+        cell.accessoryBlock(cell);
 }
 
 - (void)tableView:(UITableView *)aTableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
     [aTableView deselectRowAtIndexPath:indexPath animated:YES];
     
-    INTableViewCell *cell = [[[self.tableViewSections objectAtIndex:indexPath.section] tableViewCells] objectAtIndex:indexPath.row];
-    
-    if (cell.target && cell.selector && cell.argument)
-        [cell.target performSelector:cell.selector withObject:cell.argument];
-    else if (cell.target && cell.selector)
-        [cell.target performSelector:cell.selector];
+    INTableViewCell *cell = [[self.tableViewSections objectAtIndex:indexPath.section] cellAtIndex:indexPath.row];
+
+    if ([cell canBeSelected] && cell.selectBlock)
+        cell.selectBlock(cell);
 }
 
 - (void)reloadData
 {
-    [self.tableView reloadData];
+    if (self == self.tableView)
+        [super reloadData];
+    else
+        [self.tableView reloadData];
+}
+
+#pragma mark - Scroll View delegate
+
+- (void)scrollViewWillBeginDecelerating:(UIScrollView *)aScrollView
+{
+    CGPoint         offset = aScrollView.contentOffset;
+    CGRect          bounds = aScrollView.bounds;
+    CGSize          size = aScrollView.contentSize;
+    UIEdgeInsets    inset = aScrollView.contentInset;
+    float           y = offset.y + bounds.size.height - inset.bottom;
+    float           h = size.height;
+
+    if (self.target && [self.target respondsToSelector:@selector(tableViewWillBeginDecelerating:)])
+        [self.target tableViewWillBeginDecelerating:self];
+    
+    if  (y > (h + BOTTOM_SCROLL_RELOAD_DISTANCE))
+    {
+        if (self.target && [self.target respondsToSelector:@selector(tableViewDidReloadFromBottom:)])
+            [self.target tableViewDidReloadFromBottom:self];
+    }
+}
+
+- (void)scrollViewDidScroll:(UIScrollView *)aScrollView
+{
+    CGPoint         offset = aScrollView.contentOffset;
+    CGRect          bounds = aScrollView.bounds;
+    CGSize          size = aScrollView.contentSize;
+    UIEdgeInsets    inset = aScrollView.contentInset;
+    float           y = offset.y + bounds.size.height - inset.bottom;
+    float           h = size.height;
+    
+    if (self.target && [self.target respondsToSelector:@selector(tableViewDidScroll:)])
+        [self.target tableViewDidScroll:self];
+        
+    if  (y > (h + BOTTOM_SCROLL_RELOAD_DISTANCE))
+    {
+        if (self.target && [self.target respondsToSelector:@selector(tableViewDidScrollToBottom:)])
+            [self.target tableViewDidScrollToBottom:self];
+    }    
 }
 
 @end

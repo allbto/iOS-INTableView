@@ -14,4 +14,6 @@
 @property (retain, nonatomic) IBOutlet UIActivityIndicatorView *loadingIndicator;
 @property (retain, nonatomic) IBOutlet UILabel *loadingLabel;
 
++ (INTableViewLoadingCell*)loadingCell;
+
 @end

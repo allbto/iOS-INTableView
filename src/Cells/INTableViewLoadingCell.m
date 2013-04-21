@@ -12,6 +12,24 @@
 @synthesize loadingIndicator;
 @synthesize loadingLabel;
 
++ (INTableViewLoadingCell*)loadingCell
+{
+    INTableViewLoadingCell *cell = [[INTableViewLoadingCell alloc] init];
+    
+    cell.loadingLabel.text = [NSLocalizedString(@"Loading", nil) stringByAppendingString:@"..."];
+    return [cell autorelease];
+}
+
++ (INTableViewLoadingCell*)loadingCellWithloadingLabel:(NSString*)label
+{
+    INTableViewLoadingCell *cell = [INTableViewLoadingCell loadingCell];
+    
+    if (!label || [label isKindOfClass:[NSNull class]] || label.length == 0)
+        label = [NSLocalizedString(@"Loading", nil) stringByAppendingString:@"..."];
+    cell.loadingLabel.text = label;
+    return cell;
+}
+
 - (id)init
 {
     NSArray *nib = [[NSBundle mainBundle] loadNibNamed:@"INTableViewLoadingCell" owner:self options:nil];
@@ -24,7 +42,8 @@
     
     if (self)
     {
-        self.height = DEFAULT_CELL_HEIGHT;
+        self.cellHeight = DEFAULT_CELL_HEIGHT;
+        self.isSelectable = false;
     }
     return self;
 }
