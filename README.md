@@ -1,13 +1,12 @@
 INTableView
 ===========
 
-Simplifying the Apple's UITableView Usage
+Simplify the Apple's UITableView Usage, by creating using to use TableViews and Cells
 
 ===========
 
-This is totally in development, nothing finished yet,
-But it simplify the usage of UITableView.
+This is totally in development, nothing finished yet.
 
 A tutorial and a demo will come.
 
-But like I said it's absolutly not finished.
+But like I said, it's absolutely not finished.
