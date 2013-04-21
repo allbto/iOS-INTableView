@@ -1,7 +1,7 @@
 INTableView
 ===========
 
-Simplify the Apple's UITableView Usage, by creating using to use TableViews and Cells
+Simplify the Apple's UITableView Usage, by creating easy to use TableViews and Cells
 
 ===========
 
