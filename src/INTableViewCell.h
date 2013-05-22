@@ -23,9 +23,9 @@
 @property (nonatomic, readonly, getter = canSlideToDelete) BOOL slideToDelete;
 @property (nonatomic, getter = canBeSelected, setter = setSelectable:) BOOL isSelectable;
 
-@property (nonatomic, copy) void            (^selectBlock)(INTableViewCell*);
-@property (nonatomic, copy) void            (^accessoryBlock)(INTableViewCell*);
-@property (nonatomic, copy) void            (^deleteBlock)(INTableViewCell*);
+@property (nonatomic, copy) void            (^selectBlock)(INTableViewCell* cell);
+@property (nonatomic, copy) void            (^accessoryBlock)(INTableViewCell* cell);
+@property (nonatomic, copy) void            (^deleteBlock)(INTableViewCell* cell);
 
 // You can init with the selected block already set
 - (id)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier selectBlock:(void (^)(INTableViewCell*))block;

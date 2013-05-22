@@ -7,22 +7,21 @@
 //
 
 #import "INTableView.h"
-
 #import "INTableViewSection.h"
 
 @interface INTableView ()
 
 @property (nonatomic, retain) NSMutableArray *tableViewSections;
 
+@property (nonatomic, copy) void (^pullToRefreshBlock)(INTableView* tableView);
+
+@property (nonatomic, retain) PullToRefreshView* pullView;
+
 - (void)initialize;
 
 @end
 
 @implementation INTableView
-
-@synthesize tableView = _tableView;
-@synthesize showSidebar = _showSidebar;
-@synthesize target = _target;
 
 #pragma mark - Custom Setter/Getter
 
@@ -33,6 +32,28 @@
         [self reloadData];
 }
 
+- (void)setPullToRefresh:(BOOL)pullToRefresh withBlock:(void (^)(INTableView*))pullBlock
+{
+    _pullToRefresh = pullToRefresh;
+    _pullView.hidden = !pullToRefresh;
+    if (pullToRefresh && pullBlock)
+        self.pullToRefreshBlock = pullBlock;
+    else if (_pullToRefreshBlock)
+    {
+        [_pullToRefreshBlock release];
+        _pullToRefreshBlock = nil;
+    }
+}
+
+- (void)setPullToRefreshLoading:(BOOL)pullToRefreshLoading
+{
+    _pullToRefreshLoading = pullToRefreshLoading;
+    if (pullToRefreshLoading && _pullToRefresh)
+        [_pullView setState:PullToRefreshViewStateLoading];
+    else
+        [_pullView finishedLoading];
+}
+
 #pragma mark - NSObject
 
 - (void)initialize
@@ -41,6 +62,9 @@
     self.tableView.delegate = self;
     self.tableView.dataSource = self;
     self.tableViewSections = [NSMutableArray array];
+    _pullToRefresh = NO;
+    _pullToRefreshBlock = nil;
+    _pullView = nil;
 }
 
 - (id)init
@@ -81,12 +105,10 @@
     
     if (self)
     {
-        self.autoresizingMask = UIViewAutoresizingFlexibleHeight;
+        self.autoresizingMask = aTableView.autoresizingMask;//UIViewAutoresizingFlexibleHeight;
         self.target = aTarget;
-        aTableView.delegate = self;
-        aTableView.dataSource = self;
         self.tableView = aTableView;
-        self.tableViewSections = [NSMutableArray array];
+        [self initialize];
     }
     return self;
 }
@@ -108,8 +130,21 @@
 - (void)dealloc
 {
     [_tableViewSections release];
-    [_tableView release];
+    if (_tableView != self)
+        [_tableView release];
+    
+    [self setPullToRefresh:NO withBlock:nil];
     [super dealloc];
+}
+
+#pragma mark - UIView
+
+- (void)didMoveToSuperview
+{
+    _pullView = [[PullToRefreshView alloc] initWithScrollView:(UIScrollView *)self.tableView];
+    [_pullView setDelegate:self];
+    _pullView.hidden = !_pullToRefresh;
+    [self.tableView addSubview:_pullView];
 }
 
 #pragma mark - Section Editing
@@ -184,7 +219,7 @@
 #pragma mark - Cells Editing
 
 //TODO: Add cell with animation
-- (void)addCell:(INTableViewCell*)cell
+- (BOOL)addCell:(INTableViewCell*)cell
 {
     if (cell)
     {
@@ -193,52 +228,85 @@
         
         INTableViewSection *section = [self.tableViewSections lastObject];
         
+        // Don't ask why I do that, UITableView is tricky and release cell has soon has they are not shown
+        // But don't worry, the retainCount go back to 1 anyway
+        if (cell.retainCount == 1)
+            [cell retain];
+
         [section addCell:cell];
         [self reloadData];
+        return YES;
     }
+    return NO;
 }
-- (void)addCell:(INTableViewCell *)cell atIndex:(NSInteger)index inSection:(NSInteger)sectionIndex
+
+- (BOOL)addCell:(INTableViewCell *)cell atIndex:(NSInteger)index inSection:(NSInteger)sectionIndex
 {
-    if (cell)
+    if (cell && self.tableViewSections.count > sectionIndex)
     {
         INTableViewSection *section = [self.tableViewSections objectAtIndex:sectionIndex];
 
-        [section addCell:cell atIndex:index];
-        [self.tableView insertRowsAtIndexPaths:[NSArray arrayWithObject:[NSIndexPath indexPathForRow:index inSection:sectionIndex]] withRowAnimation:UITableViewRowAnimationBottom];
-        [self reloadData];
+        if (section.cellsCount > index)
+        {
+            [section addCell:cell atIndex:index];
+            [self.tableView insertRowsAtIndexPaths:[NSArray arrayWithObject:[NSIndexPath indexPathForRow:index inSection:sectionIndex]] withRowAnimation:UITableViewRowAnimationBottom];
+            [self reloadData];
+            return YES;
+        }
     }
+    return NO;
 }
 //TODO: Check if section is correct
-- (void)removeCellAtIndex:(NSInteger)index inSection:(NSInteger)section
+- (BOOL)removeCellAtIndex:(NSInteger)index inSection:(NSInteger)section
 {
-    [[self.tableViewSections objectAtIndex:section] removeCellAtIndex:index];
-    [self.tableView reloadData];
+    if (self.tableViewSections.count > section && [[self.tableViewSections objectAtIndex:section] cellsCount] > index)
+    {
+        [[self.tableViewSections objectAtIndex:section] removeCellAtIndex:index];
+        [self.tableView reloadData];
+        return YES;
+    }
+    return NO;
 }
 
-- (void)removeCellAtIndex:(NSInteger)index inSection:(NSInteger)section animation:(UITableViewRowAnimation)animation
+- (BOOL)removeCellAtIndex:(NSInteger)index inSection:(NSInteger)section animation:(UITableViewRowAnimation)animation
 {
-    [[self.tableViewSections objectAtIndex:section] removeCellAtIndex:index];
-    [self.tableView deleteRowsAtIndexPaths:[NSArray arrayWithObject:[NSIndexPath indexPathForRow:index inSection:section]]
-                          withRowAnimation:animation];
-    [self.tableView reloadData];
+    if (self.tableViewSections.count > section && [[self.tableViewSections objectAtIndex:section] cellsCount] > index)
+    {
+        [[self.tableViewSections objectAtIndex:section] removeCellAtIndex:index];
+        [self.tableView deleteRowsAtIndexPaths:[NSArray arrayWithObject:[NSIndexPath indexPathForRow:index inSection:section]]
+                              withRowAnimation:animation];
+        [self.tableView reloadData];
+        return YES;
+    }
+    return NO;
 }
 
-- (void)removeAllCellsInSection:(NSInteger)section
+- (BOOL)removeAllCellsInSection:(NSInteger)section
 {
-    [[self.tableViewSections objectAtIndex:section] removeAllCells];
-    [self.tableView reloadData];
+    if (self.tableViewSections.count > section)
+    {
+        [[self.tableViewSections objectAtIndex:section] removeAllCells];
+        [self.tableView reloadData];
+        return YES;
+    }
+    return NO;
 }
 
-- (void)removeAllCellsInSection:(NSInteger)section animation:(UITableViewRowAnimation)animation
+- (BOOL)removeAllCellsInSection:(NSInteger)section animation:(UITableViewRowAnimation)animation
 {
-    NSMutableArray* cellsIndexes = [NSMutableArray array];
+    if (self.tableViewSections.count > section)
+    {
+        NSMutableArray* cellsIndexes = [NSMutableArray array];
  
-    for (int i = 0 ; i < [self.tableView numberOfRowsInSection:section] ; ++i)
-        [cellsIndexes addObject:[NSIndexPath indexPathForRow:i inSection:section]];
- 
-    [[self.tableViewSections objectAtIndex:section] removeAllCells];
-    [self.tableView deleteRowsAtIndexPaths:cellsIndexes withRowAnimation:animation];
-    [self.tableView reloadData];
+        for (int i = 0 ; i < [self.tableView numberOfRowsInSection:section] ; ++i)
+            [cellsIndexes addObject:[NSIndexPath indexPathForRow:i inSection:section]];
+        
+        [[self.tableViewSections objectAtIndex:section] removeAllCells];
+        [self.tableView deleteRowsAtIndexPaths:cellsIndexes withRowAnimation:animation];
+        [self.tableView reloadData];
+        return YES;
+    }
+    return NO;
 }
 
 - (void)removeAllCells
@@ -270,17 +338,18 @@
     return [[self.tableViewSections objectAtIndex:section] cellAtIndex:row];
 }
 
-- (const NSArray*)cellsInSection:(NSUInteger)section
+- (NSArray*)cellsInSection:(NSUInteger)section
 {
-    if (section >= [self.tableViewSections count])
-        return nil;
-    
-    return [[self.tableViewSections objectAtIndex:section] cells];
+    if (self.tableViewSections.count > section)
+        return [NSArray arrayWithArray:[[self.tableViewSections objectAtIndex:section] cells]];
+    return nil;
 }
 
 - (NSUInteger)countOfCellsInSection:(NSUInteger)section
 {
-    return [[self.tableViewSections objectAtIndex:section] cellsCount];
+    if (self.tableViewSections.count > section)
+        return [[self.tableViewSections objectAtIndex:section] cellsCount];
+    return 0;
 }
 
 - (NSUInteger)countOfCells
@@ -325,6 +394,7 @@
 {
     INTableViewCell* cell = [[self.tableViewSections objectAtIndex:indexPath.section] cellAtIndex:indexPath.row];
     
+    NSLog(@"Cell[%d, %d] : %d", indexPath.section, indexPath.row, cell.retainCount);
     [cell setIndexPath:indexPath];
     return cell;
 }
@@ -436,11 +506,17 @@
 
 - (CGFloat)tableView:(UITableView *)tableView heightForFooterInSection:(NSInteger)section
 {
-    UIView* view = [[self.tableViewSections objectAtIndex:section] footerView];
+    if (self.tableViewSections.count <= section) return 0;
+
+    INTableViewSection* sec = [self.tableViewSections objectAtIndex:section];
     
+    if (sec.footer.length > 0)
+        return DEFAULT_SECTION_HEIGHT;
+
+    UIView* view = [sec footerView];
     if (view) return view.bounds.size.height;
     
-    return DEFAULT_SECTION_HEIGHT;
+    return 0;
 }
 
 #pragma mark - TableView Delegate
@@ -509,6 +585,19 @@
         if (self.target && [self.target respondsToSelector:@selector(tableViewDidScrollToBottom:)])
             [self.target tableViewDidScrollToBottom:self];
     }    
+}
+
+#pragma mark - PullToRefreshView Delegate Method
+
+- (void)pullToRefreshViewDidStartLoading:(PullToRefreshView *)view
+{
+    if (self.pullToRefresh && self.pullToRefreshBlock)
+        self.pullToRefreshBlock(self);
+}
+
+- (BOOL)pullToRefreshViewShouldRefresh:(PullToRefreshView *)view;
+{
+    return self.pullToRefresh;
 }
 
 @end

@@ -12,6 +12,8 @@
 #import "INTableViewTextCell.h"
 #import "INTableViewLoadingCell.h"
 #import "INTableViewInputCell.h"
+#import "INTableViewSwitchCell.h"
+#import "PullToRefreshView.h"
 
 #define BOTTOM_SCROLL_RELOAD_DISTANCE 10
 
@@ -20,17 +22,18 @@
 @protocol INTableViewDelegate;
 
 @interface INTableView : UITableView
-<UITableViewDelegate, UITableViewDataSource>
-{
-    UITableView*            _tableView;
-    NSMutableArray*         _tableViewSections;
-    id<INTableViewDelegate> _target;
-}
+<UITableViewDelegate, UITableViewDataSource, PullToRefreshViewDelegate>
 
 // Property
 @property (nonatomic, retain) UITableView *tableView;
 @property (nonatomic, assign, getter = sidebarIsShown) BOOL showSidebar;
 @property (nonatomic, assign) id<INTableViewDelegate> target;
+
+@property (nonatomic, readonly, getter = canPullToRefresh) BOOL pullToRefresh;
+@property (nonatomic, assign, getter = isPullToRefreshLoading) BOOL pullToRefreshLoading;
+
+- (void)setPullToRefresh:(BOOL)pullToRefresh withBlock:(void (^)(INTableView*))tableView;
+
 
 // Custom Initialisation
 - (id)initWithTableView:(UITableView*)aTableView target:(id<INTableViewDelegate>)aTarget;
@@ -49,18 +52,18 @@
 - (void)setHeaderView:(UIView*)header forSectionAtIndex:(NSInteger)index;
 
 // Editing Cells
-- (void)addCell:(INTableViewCell*)cell;
-- (void)addCell:(INTableViewCell *)cell atIndex:(NSInteger)index inSection:(NSInteger)sectionIndex;
-- (void)removeCellAtIndex:(NSInteger)index inSection:(NSInteger)section;
-- (void)removeCellAtIndex:(NSInteger)index inSection:(NSInteger)section animation:(UITableViewRowAnimation)animation;
-- (void)removeAllCellsInSection:(NSInteger)section;
-- (void)removeAllCellsInSection:(NSInteger)section animation:(UITableViewRowAnimation)animation;
+- (BOOL)addCell:(INTableViewCell*)cell;
+- (BOOL)addCell:(INTableViewCell *)cell atIndex:(NSInteger)index inSection:(NSInteger)sectionIndex;
+- (BOOL)removeCellAtIndex:(NSInteger)index inSection:(NSInteger)section;
+- (BOOL)removeCellAtIndex:(NSInteger)index inSection:(NSInteger)section animation:(UITableViewRowAnimation)animation;
+- (BOOL)removeAllCellsInSection:(NSInteger)section;
+- (BOOL)removeAllCellsInSection:(NSInteger)section animation:(UITableViewRowAnimation)animation;
 - (void)removeAllCells;
 - (void)removeAllCellsWithAnimation:(UITableViewRowAnimation)animation;
 
 // Cells infos
 - (INTableViewCell*)cellForRow:(NSUInteger)row inSection:(NSUInteger)section;
-- (const NSArray*)cellsInSection:(NSUInteger)section;
+- (NSArray*)cellsInSection:(NSUInteger)section;
 - (NSUInteger)countOfCellsInSection:(NSUInteger)section;
 - (NSUInteger)countOfCells;
 // Same as above

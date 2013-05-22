@@ -7,6 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		9D74A7BB172593CB0050A153 /* INTableViewSwitchCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 9D74A7B9172593CB0050A153 /* INTableViewSwitchCell.m */; };
+		9D74A7BC172593CB0050A153 /* INTableViewSwitchCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9D74A7BA172593CB0050A153 /* INTableViewSwitchCell.xib */; };
+		9D862E10174CFC8A0055F2B1 /* arrow.png in Resources */ = {isa = PBXBuildFile; fileRef = 9D862E0B174CFC8A0055F2B1 /* arrow.png */; };
+		9D862E11174CFC8A0055F2B1 /* arrow@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 9D862E0C174CFC8A0055F2B1 /* arrow@2x.png */; };
+		9D862E12174CFC8A0055F2B1 /* PullToRefreshView.m in Sources */ = {isa = PBXBuildFile; fileRef = 9D862E0E174CFC8A0055F2B1 /* PullToRefreshView.m */; };
+		9D862E13174CFC8A0055F2B1 /* README in Resources */ = {isa = PBXBuildFile; fileRef = 9D862E0F174CFC8A0055F2B1 /* README */; };
+		9D862E15174CFE320055F2B1 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9D862E14174CFE320055F2B1 /* QuartzCore.framework */; };
 		9DFADEE0171844C600F98890 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9DFADEDF171844C600F98890 /* UIKit.framework */; };
 		9DFADEE2171844C600F98890 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9DFADEE1171844C600F98890 /* Foundation.framework */; };
 		9DFADEE4171844C600F98890 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9DFADEE3171844C600F98890 /* CoreGraphics.framework */; };
@@ -33,6 +40,15 @@
 /* Begin PBXFileReference section */
 		9D488F9F171EB90800604395 /* fr */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = fr; path = fr.lproj/ViewController.xib; sourceTree = "<group>"; };
 		9D488FA0171EB90800604395 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		9D74A7B8172593CB0050A153 /* INTableViewSwitchCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = INTableViewSwitchCell.h; sourceTree = "<group>"; };
+		9D74A7B9172593CB0050A153 /* INTableViewSwitchCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = INTableViewSwitchCell.m; sourceTree = "<group>"; };
+		9D74A7BA172593CB0050A153 /* INTableViewSwitchCell.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = INTableViewSwitchCell.xib; sourceTree = "<group>"; };
+		9D862E0B174CFC8A0055F2B1 /* arrow.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = arrow.png; sourceTree = "<group>"; };
+		9D862E0C174CFC8A0055F2B1 /* arrow@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "arrow@2x.png"; sourceTree = "<group>"; };
+		9D862E0D174CFC8A0055F2B1 /* PullToRefreshView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PullToRefreshView.h; sourceTree = "<group>"; };
+		9D862E0E174CFC8A0055F2B1 /* PullToRefreshView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PullToRefreshView.m; sourceTree = "<group>"; };
+		9D862E0F174CFC8A0055F2B1 /* README */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README; sourceTree = "<group>"; };
+		9D862E14174CFE320055F2B1 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
 		9DFADEDC171844C600F98890 /* Demo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Demo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9DFADEDF171844C600F98890 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		9DFADEE1171844C600F98890 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
@@ -73,6 +89,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9D862E15174CFE320055F2B1 /* QuartzCore.framework in Frameworks */,
 				9DFADEE0171844C600F98890 /* UIKit.framework in Frameworks */,
 				9DFADEE2171844C600F98890 /* Foundation.framework in Frameworks */,
 				9DFADEE4171844C600F98890 /* CoreGraphics.framework in Frameworks */,
@@ -82,6 +99,18 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		9D862E0A174CFC8A0055F2B1 /* PullToRefreshView */ = {
+			isa = PBXGroup;
+			children = (
+				9D862E0B174CFC8A0055F2B1 /* arrow.png */,
+				9D862E0C174CFC8A0055F2B1 /* arrow@2x.png */,
+				9D862E0D174CFC8A0055F2B1 /* PullToRefreshView.h */,
+				9D862E0E174CFC8A0055F2B1 /* PullToRefreshView.m */,
+				9D862E0F174CFC8A0055F2B1 /* README */,
+			);
+			path = PullToRefreshView;
+			sourceTree = "<group>";
+		};
 		9DFADED3171844C600F98890 = {
 			isa = PBXGroup;
 			children = (
@@ -103,6 +132,7 @@
 		9DFADEDE171844C600F98890 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				9D862E14174CFE320055F2B1 /* QuartzCore.framework */,
 				9DFADEDF171844C600F98890 /* UIKit.framework */,
 				9DFADEE1171844C600F98890 /* Foundation.framework */,
 				9DFADEE3171844C600F98890 /* CoreGraphics.framework */,
@@ -140,6 +170,7 @@
 		9DFADF021718454A00F98890 /* INTableview */ = {
 			isa = PBXGroup;
 			children = (
+				9D862E0A174CFC8A0055F2B1 /* PullToRefreshView */,
 				9DFADF30171847E300F98890 /* Cells */,
 				9DFADF051718454A00F98890 /* INTableView.h */,
 				9DFADF061718454A00F98890 /* INTableView.m */,
@@ -166,6 +197,9 @@
 				9DFADF3D171847E300F98890 /* INTableViewTextCell.h */,
 				9DFADF3E171847E300F98890 /* INTableViewTextCell.m */,
 				9DFADF3F171847E300F98890 /* INTableViewTextCell.xib */,
+				9D74A7B8172593CB0050A153 /* INTableViewSwitchCell.h */,
+				9D74A7B9172593CB0050A153 /* INTableViewSwitchCell.m */,
+				9D74A7BA172593CB0050A153 /* INTableViewSwitchCell.xib */,
 			);
 			path = Cells;
 			sourceTree = "<group>";
@@ -230,6 +264,10 @@
 				9DFADF48171847E300F98890 /* INTableViewInputCell.xib in Resources */,
 				9DFADF4A171847E300F98890 /* INTableViewLoadingCell.xib in Resources */,
 				9DFADF4C171847E300F98890 /* INTableViewTextCell.xib in Resources */,
+				9D74A7BC172593CB0050A153 /* INTableViewSwitchCell.xib in Resources */,
+				9D862E10174CFC8A0055F2B1 /* arrow.png in Resources */,
+				9D862E11174CFC8A0055F2B1 /* arrow@2x.png in Resources */,
+				9D862E13174CFC8A0055F2B1 /* README in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -250,6 +288,8 @@
 				9DFADF47171847E300F98890 /* INTableViewInputCell.m in Sources */,
 				9DFADF49171847E300F98890 /* INTableViewLoadingCell.m in Sources */,
 				9DFADF4B171847E300F98890 /* INTableViewTextCell.m in Sources */,
+				9D74A7BB172593CB0050A153 /* INTableViewSwitchCell.m in Sources */,
+				9D862E12174CFC8A0055F2B1 /* PullToRefreshView.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

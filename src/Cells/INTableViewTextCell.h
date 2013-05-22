@@ -17,8 +17,9 @@
 <UITextViewDelegate>
 
 @property(nonatomic, assign, getter = canBeEdited) BOOL isEditable;
+@property (assign, nonatomic) BOOL                      expendWhenTextChanges;
 
-@property(nonatomic, retain) IBOutlet UITextView*   textView;
+@property(nonatomic, retain) IBOutlet UITextView*       textView;
 
 @property (nonatomic, copy) void (^beginEditingBlock)(INTableViewTextCell*);
 @property (nonatomic, copy) void (^endEditingBlock)(INTableViewTextCell*);

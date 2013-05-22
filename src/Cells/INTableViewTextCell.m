@@ -40,9 +40,10 @@
     
     if (self)
     {
-        self.cellHeight = DEFAULT_CELL_HEIGHT * 3;
+        self.cellHeight = self.frame.size.height;
         self.isSelectable = NO;
         self.isEditable = NO;
+        self.expendWhenTextChanges = NO;
 
         _beginEditingBlock = nil;
         _endEditingBlock = nil;
@@ -100,6 +101,19 @@
     // Configure the view for the selected state
 }
 
+- (void)setExpendWhenTextChanges:(BOOL)expendWhenTextChanges
+{
+    _expendWhenTextChanges = expendWhenTextChanges;
+    if (expendWhenTextChanges)
+    {
+        CGRect frame = _textView.frame;
+        frame.size.height = _textView.contentSize.height;
+        _textView.frame = frame;
+        self.cellHeight = _textView.contentSize.height;
+        [self.fromTableView reloadData];
+    }
+}
+
 #pragma mark - TextView Delegate Methods
 
 - (void)textViewDidBeginEditing:(UITextView *)aTextView
@@ -117,6 +131,7 @@
 
 - (void)textViewDidChange:(UITextView *)aTextView
 {
+    self.expendWhenTextChanges = self.expendWhenTextChanges;
     if (_textChangeBlock)
         _textChangeBlock(self, aTextView.text);
 }

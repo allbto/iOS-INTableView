@@ -32,6 +32,7 @@ static NSString* DEFAULT_CELL_SLIDE_TO_DELETE_TEXT = nil;
     self.indexPath = [NSIndexPath indexPathForRow:0 inSection:0];
     _slideToDelete = NO;
     self.slideToDeleteText = DEFAULT_CELL_SLIDE_TO_DELETE_TEXT;
+    [self setSelectable:YES];
     
     self.selectBlock = nil;
     self.accessoryBlock = nil;
