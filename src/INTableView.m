@@ -17,7 +17,9 @@
 
 @property (nonatomic, retain) PullToRefreshView* pullView;
 
-- (void)initialize;
+@property (nonatomic, retain) INTableViewLoadingCell* isBottomLoadingCell;
+
+- (void)initializeTableView;
 
 @end
 
@@ -45,18 +47,31 @@
     }
 }
 
-- (void)setPullToRefreshLoading:(BOOL)pullToRefreshLoading
+- (void)setLoading:(BOOL)loading
 {
-    _pullToRefreshLoading = pullToRefreshLoading;
-    if (pullToRefreshLoading && _pullToRefresh)
+    _loading = loading;
+    if (loading && [self canPullToRefresh] && self.countOfCells == 0)
+    {
         [_pullView setState:PullToRefreshViewStateLoading];
+    }
     else
         [_pullView finishedLoading];
+
+    if (loading && (self.countOfCells > 0 || ![self canPullToRefresh]))
+    {
+        self.isBottomLoadingCell = [INTableViewLoadingCell loadingCell];
+        [self addCell:self.isBottomLoadingCell];
+    }
+    else if (!loading && self.isBottomLoadingCell)
+    {
+        [self removeCell:self.isBottomLoadingCell];
+        _isBottomLoadingCell = nil;
+    }
 }
 
 #pragma mark - NSObject
 
-- (void)initialize
+- (void)initializeTableView
 {
     self.tableView = self;
     self.tableView.delegate = self;
@@ -65,13 +80,14 @@
     _pullToRefresh = NO;
     _pullToRefreshBlock = nil;
     _pullView = nil;
+    _isBottomLoadingCell = nil;
 }
 
 - (id)init
 {
     self = [super init];
     if (self)
-        [self initialize];
+        [self initializeTableView];
     return self;
 }
 
@@ -79,7 +95,7 @@
 {
     self = [super initWithCoder:aDecoder];
     if (self)
-        [self initialize];
+        [self initializeTableView];
     return self;
 }
 
@@ -87,7 +103,7 @@
 {
     self = [super initWithFrame:frame];
     if (self)
-        [self initialize];
+        [self initializeTableView];
     return self;
 }
 
@@ -95,7 +111,7 @@
 {
     self = [super initWithFrame:frame style:style];
     if (self)
-        [self initialize];
+        [self initializeTableView];
     return self;
 }
 
@@ -108,7 +124,7 @@
         self.autoresizingMask = aTableView.autoresizingMask;//UIViewAutoresizingFlexibleHeight;
         self.target = aTarget;
         self.tableView = aTableView;
-        [self initialize];
+        [self initializeTableView];
     }
     return self;
 }
@@ -134,6 +150,7 @@
         [_tableView release];
     
     [self setPullToRefresh:NO withBlock:nil];
+    [_isBottomLoadingCell release]; _isBottomLoadingCell = nil;
     [super dealloc];
 }
 
@@ -228,11 +245,7 @@
         
         INTableViewSection *section = [self.tableViewSections lastObject];
         
-        // Don't ask why I do that, UITableView is tricky and release cell has soon has they are not shown
-        // But don't worry, the retainCount go back to 1 anyway
-        if (cell.retainCount == 1)
-            [cell retain];
-
+        cell.indexPath = [NSIndexPath indexPathForRow:section.cellsCount inSection:self.tableViewSections.count - 1];
         [section addCell:cell];
         [self reloadData];
         return YES;
@@ -248,6 +261,7 @@
 
         if (section.cellsCount > index)
         {
+            cell.indexPath = [NSIndexPath indexPathForRow:index inSection:sectionIndex];
             [section addCell:cell atIndex:index];
             [self.tableView insertRowsAtIndexPaths:[NSArray arrayWithObject:[NSIndexPath indexPathForRow:index inSection:sectionIndex]] withRowAnimation:UITableViewRowAnimationBottom];
             [self reloadData];
@@ -256,6 +270,17 @@
     }
     return NO;
 }
+
+- (BOOL)removeCell:(INTableViewCell*)cell
+{
+    return [self removeCellAtIndex:cell.indexPath.row inSection:cell.indexPath.section];
+}
+
+- (BOOL)removeCell:(INTableViewCell*)cell animation:(UITableViewRowAnimation)animation
+{
+    return [self removeCellAtIndex:cell.indexPath.row inSection:cell.indexPath.section animation:animation];
+}
+
 //TODO: Check if section is correct
 - (BOOL)removeCellAtIndex:(NSInteger)index inSection:(NSInteger)section
 {
@@ -320,14 +345,12 @@
 
 - (void)removeAllCellsWithAnimation:(UITableViewRowAnimation)animation
 {
-    for (int i = 0 ; i < self.tableViewSections.count ; i++)
+    while (self.tableViewSections.count > 0)
     {
-        INTableViewSection* section = [self.tableViewSections objectAtIndex:i];
+        INTableViewSection* section = [self.tableViewSections objectAtIndex:0];
         while ([section cellsCount] > 0)
-            [self removeCellAtIndex:0 inSection:i animation:animation];
-        [self.tableView deleteSections:[NSIndexSet indexSetWithIndex:i] withRowAnimation:animation];
-        [self.tableViewSections removeObjectAtIndex:i];
-        i--;
+            [self removeCellAtIndex:0 inSection:0 animation:animation];
+        [self.tableViewSections removeObjectAtIndex:0];
     }
 }
 
@@ -392,9 +415,18 @@
 
 - (UITableViewCell*)tableView:(UITableView *)aTableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    INTableViewCell* cell = [[self.tableViewSections objectAtIndex:indexPath.section] cellAtIndex:indexPath.row];
+    static NSString *CellIdentifier = @"Cell";
     
-    NSLog(@"Cell[%d, %d] : %d", indexPath.section, indexPath.row, cell.retainCount);
+    INTableViewCell *cell = [_tableView dequeueReusableCellWithIdentifier:CellIdentifier];
+    
+    if (!cell)
+    {
+        cell = [[self.tableViewSections objectAtIndex:indexPath.section] cellAtIndex:indexPath.row];
+    }
+    
+    //NSLog(@"Cell[%d, %d] : %d", indexPath.section, indexPath.row, cell.retainCount);
+    if (!cell.fromTableView)
+        [cell belongToTableView:self];
     [cell setIndexPath:indexPath];
     return cell;
 }
@@ -510,7 +542,7 @@
 
     INTableViewSection* sec = [self.tableViewSections objectAtIndex:section];
     
-    if (sec.footer.length > 0)
+    if (sec.footer && ![sec.footer isKindOfClass:[NSNull class]] && sec.footer.length > 0)
         return DEFAULT_SECTION_HEIGHT;
 
     UIView* view = [sec footerView];
@@ -570,21 +602,20 @@
 
 - (void)scrollViewDidScroll:(UIScrollView *)aScrollView
 {
-    CGPoint         offset = aScrollView.contentOffset;
-    CGRect          bounds = aScrollView.bounds;
-    CGSize          size = aScrollView.contentSize;
-    UIEdgeInsets    inset = aScrollView.contentInset;
-    float           y = offset.y + bounds.size.height - inset.bottom;
-    float           h = size.height;
+    CGPoint offset = self.tableView.contentOffset;
+    CGSize  size = self.tableView.contentSize;
     
     if (self.target && [self.target respondsToSelector:@selector(tableViewDidScroll:)])
         [self.target tableViewDidScroll:self];
         
-    if  (y > (h + BOTTOM_SCROLL_RELOAD_DISTANCE))
+    if (!self.isLoading && self.countOfCells > 0 && self.target && [self.target respondsToSelector:@selector(tableViewDidScrollToBottom:)])
     {
-        if (self.target && [self.target respondsToSelector:@selector(tableViewDidScrollToBottom:)])
+        if (offset.y >= ((size.height - self.tableView.frame.size.height) - ([[[[self.tableViewSections lastObject] cells] lastObject] frame].size.height * 2)))
+        {
+            [self setLoading:YES];
             [self.target tableViewDidScrollToBottom:self];
-    }    
+        }
+    }
 }
 
 #pragma mark - PullToRefreshView Delegate Method
@@ -597,7 +628,9 @@
 
 - (BOOL)pullToRefreshViewShouldRefresh:(PullToRefreshView *)view;
 {
-    return self.pullToRefresh;
+    if (!self.isLoading)
+        return self.pullToRefresh;
+    return NO;
 }
 
 @end

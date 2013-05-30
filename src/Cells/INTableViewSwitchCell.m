@@ -18,7 +18,7 @@
 
     // Customization goes here
     //
-    cell.textLabel.text = @"Kikoo lol";
+    cell.textLabel.text = @"Lorem Ipsum";
     return [cell autorelease];
 }
 
@@ -29,7 +29,7 @@
     for (id object in nib)
     {
         if ([object isKindOfClass:[INTableViewSwitchCell class]])
-            self = object;
+            self = [object retain];
     }
     
     if (self)

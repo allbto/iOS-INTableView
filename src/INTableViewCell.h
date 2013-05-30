@@ -30,9 +30,6 @@
 // You can init with the selected block already set
 - (id)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier selectBlock:(void (^)(INTableViewCell*))block;
 
-// Do not Call this methods, it doesn't do anything you need
-- (void)belongToTableView:(INTableView*)tableView;
-
 // Allow you to activate the action when you slide right to the cell and it bring the red button that say "Delete"
 // Then assign an action that will be called when the animation of deleting the cell is finished
 // A call to the server to say that the user removed an object, for exemple
@@ -41,6 +38,8 @@
 // Same method where you can also change the "Delete" label to whatever you need
 // You can also set the 'slideToDeleteText' var
 - (void)slideToDeleteActivated:(BOOL)activated withDeleteText:(NSString*)deleteText deleteBlock:(void (^)(INTableViewCell*))block;
+
+- (void)belongToTableView:(INTableView*)tableView;
 
 //
 //  Cells

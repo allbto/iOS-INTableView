@@ -127,10 +127,17 @@ static NSString* DEFAULT_CELL_SLIDE_TO_DELETE_TEXT = nil;
 - (void)setSelectable:(BOOL)selectable
 {
     _isSelectable = selectable;
-    if (selectable)
+    /*if (selectable)
         self.selectionStyle = UITableViewCellSelectionStyleBlue;
     else
-        self.selectionStyle = UITableViewCellSelectionStyleNone;
+        self.selectionStyle = UITableViewCellSelectionStyleNone;*/
+}
+
+- (void)setSelectBlock:(void (^)(INTableViewCell *))selectBlock
+{
+    [self setSelectable:YES];
+    [_selectBlock release];
+    _selectBlock = [selectBlock copy];
 }
 
 - (void)slideToDeleteActivated:(BOOL)activated deleteBlock:(void (^)(INTableViewCell*))block

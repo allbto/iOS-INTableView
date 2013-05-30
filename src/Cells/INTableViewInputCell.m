@@ -29,7 +29,7 @@
     for (id object in nib)
     {
         if ([object isKindOfClass:[INTableViewInputCell class]])
-            self = object;
+            self = [object retain];
     }
     
     if (self)

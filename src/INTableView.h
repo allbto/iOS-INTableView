@@ -15,7 +15,7 @@
 #import "INTableViewSwitchCell.h"
 #import "PullToRefreshView.h"
 
-#define BOTTOM_SCROLL_RELOAD_DISTANCE 10
+#define BOTTOM_SCROLL_RELOAD_DISTANCE 0
 
 @class INTableViewSection;
 
@@ -30,7 +30,7 @@
 @property (nonatomic, assign) id<INTableViewDelegate> target;
 
 @property (nonatomic, readonly, getter = canPullToRefresh) BOOL pullToRefresh;
-@property (nonatomic, assign, getter = isPullToRefreshLoading) BOOL pullToRefreshLoading;
+@property (nonatomic, assign, getter = isLoading, setter = setLoading:) BOOL loading;
 
 - (void)setPullToRefresh:(BOOL)pullToRefresh withBlock:(void (^)(INTableView*))tableView;
 
@@ -54,6 +54,8 @@
 // Editing Cells
 - (BOOL)addCell:(INTableViewCell*)cell;
 - (BOOL)addCell:(INTableViewCell *)cell atIndex:(NSInteger)index inSection:(NSInteger)sectionIndex;
+- (BOOL)removeCell:(INTableViewCell*)cell;
+- (BOOL)removeCell:(INTableViewCell*)cell animation:(UITableViewRowAnimation)animation;
 - (BOOL)removeCellAtIndex:(NSInteger)index inSection:(NSInteger)section;
 - (BOOL)removeCellAtIndex:(NSInteger)index inSection:(NSInteger)section animation:(UITableViewRowAnimation)animation;
 - (BOOL)removeAllCellsInSection:(NSInteger)section;
