@@ -33,5 +33,4 @@ Will produce :
 
 ===========
 
-This is totally in development, nothing finished yet.
-A tutorial and a demo will come.
+This is in development, nothing finished yet. A demo will come soon.
