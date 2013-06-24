@@ -19,6 +19,7 @@ A simple usage :
     
     // Putting cells into the tableView
     [self.tableView addCell:[INTableViewCell defaultCellWithTitle:@"Title" detailText:@"Detail" selectBlock:^(INTableViewCell *cell) {
+        NSLog(@"Did Select cell");
         cell.textLabel.text = [[NSDate date] description];
     }]];
     [self.tableView addCell:[INTableViewInputCell inputCellWithTitle:@"Title" prompt:@"Prompt"]];
