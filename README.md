@@ -6,6 +6,9 @@ Simplify the Apple's UITableView Usage, by creating easy to use TableViews and C
 A simple usage :
 
 ```Obj-C
+
+    //Where self.tableView is an outlet on an INTableView inside a XIB or a Storyboard
+
     // By calling this method you allow the tableView to have a pullToRefresh View and to call this block when the user reloads it
     [self.tableView setPullToRefresh:YES withBlock:^(INTableView *tableView) {
         NSLog(@"Did Pull to Refresh");
@@ -14,15 +17,14 @@ A simple usage :
         tableView.loading = NO;
     }];
     
-    //
-    // Here we begin to put cells into our tableView
-    //
+    // Putting cells into the tableView
     [self.tableView addCell:[INTableViewCell defaultCellWithTitle:@"Title" detailText:@"Detail" selectBlock:^(INTableViewCell *cell) {
         cell.textLabel.text = [[NSDate date] description];
     }]];
     [self.tableView addCell:[INTableViewInputCell inputCellWithTitle:@"Title" prompt:@"Prompt"]];
     [self.tableView addCell:[INTableViewSwitchCell defaultCell]];
     [self.tableView addCell:[INTableViewLoadingCell defaultCell]];
+    
 ```
 
 Will produce :
