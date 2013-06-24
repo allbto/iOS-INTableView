@@ -25,11 +25,11 @@
     //self.tableView = [[INTableView alloc] initWithTableView:{The UITableView} target:self];
     // This is the old way, I used it because I had some problem with XIB file and INTableView, but it's fixed now
     
-    // By calling this method you allow the tableView to have a pullToRefreshView and call the block when the user reloads it
+    // By calling this method you allow the tableView to have a pullToRefresh View and to call this block when the user reloads it
     [self.tableView setPullToRefresh:YES withBlock:^(INTableView *tableView) {
         NSLog(@"Did Pull to Refresh");
         
-        // Once you're over with you download and other don't forget to call :
+        // Once you're over with your download and stuffs don't forget to call :
         tableView.loading = NO;
     }];
     
