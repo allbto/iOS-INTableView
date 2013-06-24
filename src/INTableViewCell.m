@@ -189,7 +189,7 @@ static NSString* DEFAULT_CELL_SLIDE_TO_DELETE_TEXT = nil;
     INTableViewCell *cell = [[INTableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"Action" selectBlock:block];
     
     cell.textLabel.text = ([title isKindOfClass:[NSNull class]] ? @"" : title);
-    cell.textLabel.textAlignment = UITextAlignmentCenter;
+    cell.textLabel.textAlignment = NSTextAlignmentCenter;
     cell.textLabel.textColor = [UIColor colorWithRed:36/255.0 green:71/255.0 blue:113/255.0 alpha:1.0];
     
     return [cell autorelease];
@@ -199,7 +199,7 @@ static NSString* DEFAULT_CELL_SLIDE_TO_DELETE_TEXT = nil;
 {
     INTableViewCell *cell = [INTableViewCell subtitleCellWithTitle:title subtitleText:sub selectBlock:block];
     
-    cell.textLabel.textAlignment = UITextAlignmentLeft;
+    cell.textLabel.textAlignment = NSTextAlignmentLeft;
     cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
     
     return [cell autorelease];

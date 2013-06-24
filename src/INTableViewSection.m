@@ -84,12 +84,13 @@
 
 - (void)setCells:(NSArray*)cells
 {
-    [tableViewCells removeAllObjects];
+    [self removeAllCells];
     [tableViewCells setArray:cells];
 }
 
 - (void)removeCell:(INTableViewCell*)cellToRemove
 {
+    [cellToRemove release];
     [tableViewCells removeObject:cellToRemove];
 }
 
@@ -97,11 +98,14 @@
 {
     if (index > (tableViewCells.count - 1)) return;
     
+    [[tableViewCells objectAtIndex:index] release];
     [tableViewCells removeObjectAtIndex:index];
 }
 
 - (void)removeAllCells
 {
+    for (INTableViewCell* cell in tableViewCells)
+        [cell release];
     [tableViewCells removeAllObjects];
 }
 

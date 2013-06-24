@@ -14,6 +14,7 @@
 @property (nonatomic, retain) NSMutableArray *tableViewSections;
 
 @property (nonatomic, copy) void (^pullToRefreshBlock)(INTableView* tableView);
+@property (nonatomic, copy) void (^loadMoreBlock)(INTableView* tableView);
 
 @property (nonatomic, retain) PullToRefreshView* pullView;
 
@@ -32,6 +33,19 @@
     _showSidebar = doShowSidebar;
     if (_showSidebar)
         [self reloadData];
+}
+
+- (void)setLoadMoreFromBottom:(BOOL)loadMore withBlock:(void (^)(INTableView *))loadMoreBlock
+{
+    _loadMoreFromBottom = loadMore;
+    
+   if (loadMore && loadMoreBlock)
+            self.loadMoreBlock = loadMoreBlock;
+   else if (_loadMoreBlock)
+   {
+       [_loadMoreBlock release];
+       _loadMoreBlock = nil;
+   }
 }
 
 - (void)setPullToRefresh:(BOOL)pullToRefresh withBlock:(void (^)(INTableView*))pullBlock
@@ -59,13 +73,14 @@
 
     if (loading && (self.countOfCells > 0 || ![self canPullToRefresh]))
     {
-        self.isBottomLoadingCell = [INTableViewLoadingCell loadingCell];
+        if (!self.isBottomLoadingCell)
+            self.isBottomLoadingCell = [INTableViewLoadingCell loadingCell];
         [self addCell:self.isBottomLoadingCell];
     }
     else if (!loading && self.isBottomLoadingCell)
     {
+        [self.isBottomLoadingCell retain];
         [self removeCell:self.isBottomLoadingCell];
-        _isBottomLoadingCell = nil;
     }
 }
 
@@ -80,7 +95,10 @@
     _pullToRefresh = NO;
     _pullToRefreshBlock = nil;
     _pullView = nil;
+    _loadMoreBlock = nil;
     _isBottomLoadingCell = nil;
+    
+    _previousContentOffset = CGPointZero;
 }
 
 - (id)init
@@ -150,6 +168,7 @@
         [_tableView release];
     
     [self setPullToRefresh:NO withBlock:nil];
+    [self setLoadMoreFromBottom:NO withBlock:nil];
     [_isBottomLoadingCell release]; _isBottomLoadingCell = nil;
     [super dealloc];
 }
@@ -158,10 +177,22 @@
 
 - (void)didMoveToSuperview
 {
+    [super didMoveToSuperview];
+    
     _pullView = [[PullToRefreshView alloc] initWithScrollView:(UIScrollView *)self.tableView];
     [_pullView setDelegate:self];
     _pullView.hidden = !_pullToRefresh;
     [self.tableView addSubview:_pullView];
+}
+
+- (BOOL)resignFirstResponder
+{
+    for (INTableViewSection* section in self.tableViewSections)
+    {
+        for (INTableViewCell* cell in section.cells)
+            [cell resignFirstResponder];
+    }
+    return [super resignFirstResponder];
 }
 
 #pragma mark - Section Editing
@@ -338,7 +369,13 @@
 {
     if (self.tableView)
     {
-        [self.tableViewSections removeAllObjects];
+        while (self.tableViewSections.count > 0)
+        {
+            INTableViewSection* section = [self.tableViewSections firstObject];
+            
+            [section removeAllCells];
+            [self.tableViewSections removeObjectAtIndex:0];
+        }
         [self.tableView reloadData];
     }
 }
@@ -423,7 +460,7 @@
     {
         cell = [[self.tableViewSections objectAtIndex:indexPath.section] cellAtIndex:indexPath.row];
     }
-    
+
     //NSLog(@"Cell[%d, %d] : %d", indexPath.section, indexPath.row, cell.retainCount);
     if (!cell.fromTableView)
         [cell belongToTableView:self];
@@ -583,21 +620,21 @@
 
 - (void)scrollViewWillBeginDecelerating:(UIScrollView *)aScrollView
 {
-    CGPoint         offset = aScrollView.contentOffset;
-    CGRect          bounds = aScrollView.bounds;
-    CGSize          size = aScrollView.contentSize;
-    UIEdgeInsets    inset = aScrollView.contentInset;
-    float           y = offset.y + bounds.size.height - inset.bottom;
-    float           h = size.height;
+//    CGPoint         offset = aScrollView.contentOffset;
+//    CGRect          bounds = aScrollView.bounds;
+//    CGSize          size = aScrollView.contentSize;
+//    UIEdgeInsets    inset = aScrollView.contentInset;
+//    float           y = offset.y + bounds.size.height - inset.bottom;
+//    float           h = size.height;
 
     if (self.target && [self.target respondsToSelector:@selector(tableViewWillBeginDecelerating:)])
         [self.target tableViewWillBeginDecelerating:self];
     
-    if  (y > (h + BOTTOM_SCROLL_RELOAD_DISTANCE))
-    {
-        if (self.target && [self.target respondsToSelector:@selector(tableViewDidReloadFromBottom:)])
-            [self.target tableViewDidReloadFromBottom:self];
-    }
+//    if  (y > (h + BOTTOM_SCROLL_RELOAD_DISTANCE))
+//    {
+//        if (self.target && [self.target respondsToSelector:@selector(tableViewDidReloadFromBottom:)])
+//            [self.target tableViewDidReloadFromBottom:self];
+//    }
 }
 
 - (void)scrollViewDidScroll:(UIScrollView *)aScrollView
@@ -607,13 +644,14 @@
     
     if (self.target && [self.target respondsToSelector:@selector(tableViewDidScroll:)])
         [self.target tableViewDidScroll:self];
+    _previousContentOffset = offset;
         
-    if (!self.isLoading && self.countOfCells > 0 && self.target && [self.target respondsToSelector:@selector(tableViewDidScrollToBottom:)])
+    if (!self.isLoading && self.countOfCells > 0 && self.canLoadMoreFromBottom && self.loadMoreBlock)
     {
-        if (offset.y >= ((size.height - self.tableView.frame.size.height) - ([[[[self.tableViewSections lastObject] cells] lastObject] frame].size.height * 2)))
+        if (offset.y >= ((size.height - self.tableView.frame.size.height) - ([[[[self.tableViewSections lastObject] cells] lastObject] frame].size.height * NUMBER_OF_CELL_BEFORE_RELOAD_MORE)))
         {
             [self setLoading:YES];
-            [self.target tableViewDidScrollToBottom:self];
+            self.loadMoreBlock(self);
         }
     }
 }
