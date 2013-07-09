@@ -18,8 +18,6 @@
 
 @property (nonatomic, retain) PullToRefreshView* pullView;
 
-@property (nonatomic, retain) INTableViewLoadingCell* isBottomLoadingCell;
-
 - (void)initializeTableView;
 
 @end
@@ -73,14 +71,11 @@
 
     if (loading && (self.countOfCells > 0 || ![self canPullToRefresh]))
     {
-        if (!self.isBottomLoadingCell)
-            self.isBottomLoadingCell = [INTableViewLoadingCell loadingCell];
-        [self addCell:self.isBottomLoadingCell];
+        self.loadMoreLoadingCell.hidden = NO;
     }
-    else if (!loading && self.isBottomLoadingCell)
+    else if (!loading)
     {
-        [self.isBottomLoadingCell retain];
-        [self removeCell:self.isBottomLoadingCell];
+        self.loadMoreLoadingCell.hidden = YES;
     }
 }
 
@@ -88,17 +83,20 @@
 
 - (void)initializeTableView
 {
-    self.tableView = self;
-    self.tableView.delegate = self;
-    self.tableView.dataSource = self;
+    self = self;
+    self.delegate = self;
+    self.dataSource = self;
     self.tableViewSections = [NSMutableArray array];
     _pullToRefresh = NO;
+    _loadMoreFromBottom = NO;
+    _loading = NO;
     _pullToRefreshBlock = nil;
     _pullView = nil;
     _loadMoreBlock = nil;
-    _isBottomLoadingCell = nil;
     
     _previousContentOffset = CGPointZero;
+    _loadMoreLoadingCell = [[INTableViewLoadingCell loadingCell] retain];
+    self.loadMoreLoadingCell.hidden = YES;
 }
 
 - (id)init
@@ -133,23 +131,21 @@
     return self;
 }
 
-- (id)initWithTableView:(UITableView*)aTableView target:(id<INTableViewDelegate>)aTarget
+- (id)initWithDelegate:(id<INTableViewDelegate>)aIndelegate
 {
-    self = [super initWithFrame:aTableView.frame style:UITableViewStylePlain];
+    self = [super initWithFrame:CGRectZero style:UITableViewStylePlain];
     
     if (self)
     {
-        self.autoresizingMask = aTableView.autoresizingMask;//UIViewAutoresizingFlexibleHeight;
-        self.target = aTarget;
-        self.tableView = aTableView;
+        self.indelegate = aIndelegate;
         [self initializeTableView];
     }
     return self;
 }
 
-- (id)initWithTableView:(UITableView *)aTableView cells:(NSArray*)cells target:(id<INTableViewDelegate>)aTarget
+- (id)initWithCells:(NSArray*)cells delegate:(id<INTableViewDelegate>)aIndelegate
 {
-    self = [self initWithTableView:aTableView target:aTarget];
+    self = [self initWithDelegate:aIndelegate];
     
     if (self)
     {
@@ -164,12 +160,10 @@
 - (void)dealloc
 {
     [_tableViewSections release];
-    if (_tableView != self)
-        [_tableView release];
     
     [self setPullToRefresh:NO withBlock:nil];
     [self setLoadMoreFromBottom:NO withBlock:nil];
-    [_isBottomLoadingCell release]; _isBottomLoadingCell = nil;
+    [_loadMoreLoadingCell release]; _loadMoreLoadingCell = nil;
     [super dealloc];
 }
 
@@ -179,10 +173,10 @@
 {
     [super didMoveToSuperview];
     
-    _pullView = [[PullToRefreshView alloc] initWithScrollView:(UIScrollView *)self.tableView];
+    _pullView = [[PullToRefreshView alloc] initWithScrollView:(UIScrollView *)self];
     [_pullView setDelegate:self];
     _pullView.hidden = !_pullToRefresh;
-    [self.tableView addSubview:_pullView];
+    [self addSubview:_pullView];
 }
 
 - (BOOL)resignFirstResponder
@@ -294,7 +288,7 @@
         {
             cell.indexPath = [NSIndexPath indexPathForRow:index inSection:sectionIndex];
             [section addCell:cell atIndex:index];
-            [self.tableView insertRowsAtIndexPaths:[NSArray arrayWithObject:[NSIndexPath indexPathForRow:index inSection:sectionIndex]] withRowAnimation:UITableViewRowAnimationBottom];
+            [self insertRowsAtIndexPaths:[NSArray arrayWithObject:[NSIndexPath indexPathForRow:index inSection:sectionIndex]] withRowAnimation:UITableViewRowAnimationBottom];
             [self reloadData];
             return YES;
         }
@@ -312,13 +306,12 @@
     return [self removeCellAtIndex:cell.indexPath.row inSection:cell.indexPath.section animation:animation];
 }
 
-//TODO: Check if section is correct
 - (BOOL)removeCellAtIndex:(NSInteger)index inSection:(NSInteger)section
 {
     if (self.tableViewSections.count > section && [[self.tableViewSections objectAtIndex:section] cellsCount] > index)
     {
         [[self.tableViewSections objectAtIndex:section] removeCellAtIndex:index];
-        [self.tableView reloadData];
+        [self reloadData];
         return YES;
     }
     return NO;
@@ -329,9 +322,9 @@
     if (self.tableViewSections.count > section && [[self.tableViewSections objectAtIndex:section] cellsCount] > index)
     {
         [[self.tableViewSections objectAtIndex:section] removeCellAtIndex:index];
-        [self.tableView deleteRowsAtIndexPaths:[NSArray arrayWithObject:[NSIndexPath indexPathForRow:index inSection:section]]
+        [self deleteRowsAtIndexPaths:[NSArray arrayWithObject:[NSIndexPath indexPathForRow:index inSection:section]]
                               withRowAnimation:animation];
-        [self.tableView reloadData];
+        [self reloadData];
         return YES;
     }
     return NO;
@@ -342,7 +335,7 @@
     if (self.tableViewSections.count > section)
     {
         [[self.tableViewSections objectAtIndex:section] removeAllCells];
-        [self.tableView reloadData];
+        [self reloadData];
         return YES;
     }
     return NO;
@@ -354,12 +347,12 @@
     {
         NSMutableArray* cellsIndexes = [NSMutableArray array];
  
-        for (int i = 0 ; i < [self.tableView numberOfRowsInSection:section] ; ++i)
+        for (int i = 0 ; i < [self numberOfRowsInSection:section] ; ++i)
             [cellsIndexes addObject:[NSIndexPath indexPathForRow:i inSection:section]];
         
         [[self.tableViewSections objectAtIndex:section] removeAllCells];
-        [self.tableView deleteRowsAtIndexPaths:cellsIndexes withRowAnimation:animation];
-        [self.tableView reloadData];
+        [self deleteRowsAtIndexPaths:cellsIndexes withRowAnimation:animation];
+        [self reloadData];
         return YES;
     }
     return NO;
@@ -367,17 +360,14 @@
 
 - (void)removeAllCells
 {
-    if (self.tableView)
+    while (self.tableViewSections.count > 0)
     {
-        while (self.tableViewSections.count > 0)
-        {
-            INTableViewSection* section = [self.tableViewSections firstObject];
-            
-            [section removeAllCells];
-            [self.tableViewSections removeObjectAtIndex:0];
-        }
-        [self.tableView reloadData];
+        INTableViewSection* section = [self.tableViewSections firstObject];
+        
+        [section removeAllCells];
+        [self.tableViewSections removeObjectAtIndex:0];
     }
+    [self reloadData];
 }
 
 - (void)removeAllCellsWithAnimation:(UITableViewRowAnimation)animation
@@ -389,6 +379,50 @@
             [self removeCellAtIndex:0 inSection:0 animation:animation];
         [self.tableViewSections removeObjectAtIndex:0];
     }
+}
+
+- (void)moveRowAtIndexPath:(NSIndexPath *)indexPath toIndexPath:(NSIndexPath *)newIndexPath
+{
+    if (self.tableViewSections.count <= indexPath.section || self.tableViewSections.count == 0 || [[self.tableViewSections objectAtIndex:indexPath.section] cellsCount] <= indexPath.row) return;
+
+    INTableViewSection* oldSection = [self.tableViewSections objectAtIndex:indexPath.section];
+    INTableViewCell*    cell = [oldSection cellAtIndex:indexPath.row];
+    if (!cell) return;
+    [cell retain];
+    [oldSection removeCell:cell];
+    
+    NSInteger           sectionIndex = (newIndexPath.section >= self.tableViewSections.count ? self.tableViewSections.count - 1 : newIndexPath.section);
+    INTableViewSection* section = [self.tableViewSections objectAtIndex:sectionIndex];
+    NSInteger           row = (newIndexPath.row > section.cellsCount ? section.cellsCount : newIndexPath.row);
+
+    [section addCell:cell atIndex:row];
+    //[cell release];
+    [self reloadData];
+}
+
+- (void)moveSection:(NSInteger)section toSection:(NSInteger)newSection
+{
+    if (self.tableViewSections.count <= section || self.tableViewSections.count == 0) return;
+    
+    INTableViewSection* sect = [self.tableViewSections objectAtIndex:section];
+    [sect retain];
+    [self.tableViewSections removeObject:sect];
+    newSection = (newSection >= self.tableViewSections.count ? self.tableViewSections.count - 1 : newSection);
+    [self.tableViewSections insertObject:sect atIndex:newSection];
+    [sect release];
+    [self reloadData];
+}
+
+- (void)moveCell:(INTableViewCell*)cell toIndexPath:(NSIndexPath*)newIndexPath
+{
+    [self moveRowAtIndexPath:cell.indexPath toIndexPath:newIndexPath];
+}
+
+- (void)moveCellToLastIndexPath:(INTableViewCell*)cell
+{
+    if (self.tableViewSections.count == 0 || [[self.tableViewSections lastObject] cellsCount] == 0) return;
+    
+    [self moveRowAtIndexPath:cell.indexPath toIndexPath:[[[[self.tableViewSections lastObject] cells] lastObject] indexPath]];
 }
 
 #pragma mark - Cell infos
@@ -438,23 +472,26 @@
 {
     if (_tableViewSections.count <= 0) return;
     NSIndexPath *scrollIndexPath = [NSIndexPath indexPathForRow:0 inSection:0];
-    [[self tableView] scrollToRowAtIndexPath:scrollIndexPath atScrollPosition:UITableViewScrollPositionTop animated:animated];
+    [self scrollToRowAtIndexPath:scrollIndexPath atScrollPosition:UITableViewScrollPositionTop animated:animated];
 }
 
 - (void)scrollToBottomAnimated:(BOOL)animated
 {
     if (_tableViewSections.count <= 0 || (_tableViewSections.count > 0 && [_tableViewSections.lastObject cellsCount] == 0)) return;
     NSIndexPath *scrollIndexPath = [NSIndexPath indexPathForRow:([self.tableViewSections.lastObject cellsCount] - 1) inSection:self.tableViewSections.count - 1];
-    [[self tableView] scrollToRowAtIndexPath:scrollIndexPath atScrollPosition:UITableViewScrollPositionBottom animated:animated];
+    [self scrollToRowAtIndexPath:scrollIndexPath atScrollPosition:UITableViewScrollPositionBottom animated:animated];
 }
 
 #pragma mark - TableView DataSource
 
 - (UITableViewCell*)tableView:(UITableView *)aTableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
+    if (self.tableViewSections.count == 0 || (indexPath.section == self.tableViewSections.count - 1 && indexPath.row == [[self.tableViewSections lastObject] cellsCount]))
+        return self.loadMoreLoadingCell;
+
     static NSString *CellIdentifier = @"Cell";
     
-    INTableViewCell *cell = [_tableView dequeueReusableCellWithIdentifier:CellIdentifier];
+    INTableViewCell *cell = [self dequeueReusableCellWithIdentifier:CellIdentifier];
     
     if (!cell)
     {
@@ -470,6 +507,11 @@
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
 {
+    if (self.tableViewSections.count == 0 || (indexPath.section == self.tableViewSections.count - 1 && indexPath.row == [[self.tableViewSections lastObject] cellsCount]))
+    {
+        return self.loadMoreLoadingCell.cellHeight;
+    }
+
     return [[[self.tableViewSections objectAtIndex:indexPath.section] cellAtIndex:indexPath.row] cellHeight];
 }
 
@@ -480,7 +522,12 @@
 
 - (NSInteger)tableView:(UITableView *)aTableView numberOfRowsInSection:(NSInteger)section
 {
-    return [[self.tableViewSections objectAtIndex:section] cellsCount];
+    NSInteger rows = 0;
+
+    if (self.tableViewSections.count == 0 || section == self.tableViewSections.count - 1)
+        rows += 1;
+    rows += [[self.tableViewSections objectAtIndex:section] cellsCount];
+    return rows;
 }
 
 - (NSString*)tableView:(UITableView *)aTableView titleForHeaderInSection:(NSInteger)section
@@ -526,11 +573,17 @@
 
 - (NSString *)tableView:(UITableView *)tableView titleForDeleteConfirmationButtonForRowAtIndexPath:(NSIndexPath *)indexPath
 {
+    if (self.tableViewSections.count == 0 || (indexPath.section == self.tableViewSections.count - 1 && indexPath.row == [[self.tableViewSections lastObject] cellsCount]))
+        return self.loadMoreLoadingCell.slideToDeleteText;
+
     return [[[self.tableViewSections objectAtIndex:indexPath.section] cellAtIndex:indexPath.row] slideToDeleteText];
 }
 
 - (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath
 {
+    if (self.tableViewSections.count == 0 || (indexPath.section == self.tableViewSections.count - 1 && indexPath.row == [[self.tableViewSections lastObject] cellsCount]))
+        return self.loadMoreLoadingCell.canSlideToDelete;
+
     return [[[self.tableViewSections objectAtIndex:indexPath.section] cellAtIndex:indexPath.row] canSlideToDelete];
 }
 
@@ -542,15 +595,20 @@
 
 - (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    INTableViewCell *cell = [[self.tableViewSections objectAtIndex:indexPath.section] cellAtIndex:indexPath.row];
+    INTableViewCell *cell = nil;
+
+    if (self.tableViewSections.count == 0 || (indexPath.section == self.tableViewSections.count - 1 && indexPath.row == [[self.tableViewSections lastObject] cellsCount]))
+        cell = self.loadMoreLoadingCell;
+    else
+        cell = [[self.tableViewSections objectAtIndex:indexPath.section] cellAtIndex:indexPath.row];
 
     if (editingStyle == UITableViewCellEditingStyleDelete && [cell canSlideToDelete])
     {
-        [self.tableView beginUpdates];
+        [self beginUpdates];
         
         if (cell.deleteBlock)
             cell.deleteBlock(cell);
-        [self.tableView endUpdates];
+        [self endUpdates];
     }
 }
 
@@ -592,6 +650,13 @@
 
 - (void)tableView:(UITableView *)tableView accessoryButtonTappedForRowWithIndexPath:(NSIndexPath *)indexPath
 {
+    if (self.tableViewSections.count == 0 || (indexPath.section == self.tableViewSections.count - 1 && indexPath.row == [[self.tableViewSections lastObject] cellsCount]))
+    {
+        if (self.loadMoreLoadingCell.accessoryBlock)
+            self.loadMoreLoadingCell.accessoryBlock(self.loadMoreLoadingCell);
+        return;
+    }
+
     INTableViewCell *cell = (INTableViewCell *)[self cellForRow:indexPath.row inSection:indexPath.section];
     
     if (cell.accessoryBlock)
@@ -600,6 +665,13 @@
 
 - (void)tableView:(UITableView *)aTableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
+    if (self.tableViewSections.count == 0 || (indexPath.section == self.tableViewSections.count - 1 && indexPath.row == [[self.tableViewSections lastObject] cellsCount]))
+    {
+        if ([self.loadMoreLoadingCell canBeSelected] && self.loadMoreLoadingCell.selectBlock)
+            self.loadMoreLoadingCell.selectBlock(self.loadMoreLoadingCell);
+        return;
+    }
+    
     [aTableView deselectRowAtIndexPath:indexPath animated:YES];
     
     INTableViewCell *cell = [[self.tableViewSections objectAtIndex:indexPath.section] cellAtIndex:indexPath.row];
@@ -610,10 +682,7 @@
 
 - (void)reloadData
 {
-    if (self == self.tableView)
-        [super reloadData];
-    else
-        [self.tableView reloadData];
+    [super reloadData];
 }
 
 #pragma mark - Scroll View delegate
@@ -627,8 +696,8 @@
 //    float           y = offset.y + bounds.size.height - inset.bottom;
 //    float           h = size.height;
 
-    if (self.target && [self.target respondsToSelector:@selector(tableViewWillBeginDecelerating:)])
-        [self.target tableViewWillBeginDecelerating:self];
+    if (self.indelegate && [self.indelegate respondsToSelector:@selector(tableViewWillBeginDecelerating:)])
+        [self.indelegate tableViewWillBeginDecelerating:self];
     
 //    if  (y > (h + BOTTOM_SCROLL_RELOAD_DISTANCE))
 //    {
@@ -639,16 +708,16 @@
 
 - (void)scrollViewDidScroll:(UIScrollView *)aScrollView
 {
-    CGPoint offset = self.tableView.contentOffset;
-    CGSize  size = self.tableView.contentSize;
+    CGPoint offset = self.contentOffset;
+    CGSize  size = self.contentSize;
     
-    if (self.target && [self.target respondsToSelector:@selector(tableViewDidScroll:)])
-        [self.target tableViewDidScroll:self];
+    if ((offset.y + self.frame.size.height) < (size.height+DEFAULT_CELL_HEIGHT) && self.indelegate && [self.indelegate respondsToSelector:@selector(tableViewDidScroll:)])
+        [self.indelegate tableViewDidScroll:self];
     _previousContentOffset = offset;
         
     if (!self.isLoading && self.countOfCells > 0 && self.canLoadMoreFromBottom && self.loadMoreBlock)
     {
-        if (offset.y >= ((size.height - self.tableView.frame.size.height) - ([[[[self.tableViewSections lastObject] cells] lastObject] frame].size.height * NUMBER_OF_CELL_BEFORE_RELOAD_MORE)))
+        if (offset.y >= ((size.height - self.frame.size.height) - ([[[[self.tableViewSections lastObject] cells] lastObject] frame].size.height * NUMBER_OF_CELL_BEFORE_LOADING_MORE)))
         {
             [self setLoading:YES];
             self.loadMoreBlock(self);

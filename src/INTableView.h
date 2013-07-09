@@ -15,7 +15,7 @@
 #import "INTableViewSwitchCell.h"
 #import "PullToRefreshView.h"
 
-#define NUMBER_OF_CELL_BEFORE_RELOAD_MORE 1
+#define NUMBER_OF_CELL_BEFORE_LOADING_MORE 1
 
 @class INTableViewSection;
 
@@ -24,24 +24,47 @@
 @interface INTableView : UITableView
 <UITableViewDelegate, UITableViewDataSource, PullToRefreshViewDelegate>
 
-// Property
-@property (nonatomic, retain) UITableView *tableView;
+//
+// Properties
+//
+
+// Use this property to have the access the INTableView protocol's methods
+// Because I need all of the UITableView delegate's methods to make things right ;)
+@property (nonatomic, assign) id<INTableViewDelegate> indelegate;
+
+// Set to YES to show the side bar at the right (used in the contact app to choose a letter)
+// Default : NO
 @property (nonatomic, assign, getter = sidebarIsShown) BOOL showSidebar;
-@property (nonatomic, assign) id<INTableViewDelegate> target;
 
+// Use -setPullToRefresh:withBlock: to allow the user to pull to refresh the tableView with the right callback
+// Default : NO
 @property (nonatomic, readonly, getter = canPullToRefresh) BOOL pullToRefresh;
+
+// Use -setLoadMoreFromBottom:withBlock: to allow the user to load more when he comes to the end of the tableView, with the right callback
+// Default : NO
 @property (nonatomic, readonly, getter = canLoadMoreFromBottom) BOOL loadMoreFromBottom;
-
-@property (nonatomic, assign, getter = isLoading, setter = setLoading:) BOOL loading;
-
-@property (nonatomic, readonly) CGPoint previousContentOffset;
 
 - (void)setPullToRefresh:(BOOL)pullToRefresh withBlock:(void (^)(INTableView*tableView))pullBlock;
 - (void)setLoadMoreFromBottom:(BOOL)loadMore withBlock:(void (^)(INTableView*tableView))loadMoreBlock;
 
+// Used when loading more cell
+// A INTableViewLoadingCell is placed at the end of the tableView
+// Set to NO to hide it and to YES to show it again
+// You need to call it when you're done loading your cells, etc.
+// Default : NO
+@property (nonatomic, assign, getter = isLoading, setter = setLoading:) BOOL loading;
+
+// The loading cell placed at the end of the tableView
+// And shown when loading is set to YES
+// Pesonalize the INTableViewLoadingCell to change the design
+// And you can access it from here to make changes on the go, like labels etc.
+@property (nonatomic, readonly) INTableViewLoadingCell* loadMoreLoadingCell;
+
+@property (nonatomic, readonly) CGPoint previousContentOffset;
+
 // Custom Initialisation
-- (id)initWithTableView:(UITableView*)aTableView target:(id<INTableViewDelegate>)aTarget;
-- (id)initWithTableView:(UITableView *)aTableView cells:(NSArray*)cells target:(id<INTableViewDelegate>)aTarget;
+- (id)initWithDelegate:(id<INTableViewDelegate>)aIndelegate;
+- (id)initWithCells:(NSArray*)cells delegate:(id<INTableViewDelegate>)aIndelegate;
 
 // Editing Sections
 - (void)addSectionWithTitle:(NSString*)title andFooter:(NSString*)footer;
@@ -66,6 +89,11 @@
 - (BOOL)removeAllCellsInSection:(NSInteger)section animation:(UITableViewRowAnimation)animation;
 - (void)removeAllCells;
 - (void)removeAllCellsWithAnimation:(UITableViewRowAnimation)animation;
+
+- (void)moveRowAtIndexPath:(NSIndexPath *)indexPath toIndexPath:(NSIndexPath *)newIndexPath;
+- (void)moveSection:(NSInteger)section toSection:(NSInteger)newSection;
+- (void)moveCell:(INTableViewCell*)cell toIndexPath:(NSIndexPath*)newIndexPath;
+- (void)moveCellToLastIndexPath:(INTableViewCell*)cell;
 
 // Cells infos
 - (INTableViewCell*)cellForRow:(NSUInteger)row inSection:(NSUInteger)section;

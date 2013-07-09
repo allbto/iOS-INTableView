@@ -118,9 +118,7 @@
 
 - (NSArray*)cells
 {
-    NSArray* cells = [NSArray arrayWithArray:tableViewCells];
-    
-    return cells;
+    return tableViewCells;
 }
 
 - (INTableViewCell*)cellAtIndex:(NSUInteger)index
