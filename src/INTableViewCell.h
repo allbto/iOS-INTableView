@@ -19,6 +19,7 @@
 @property (nonatomic, assign) CGFloat       cellHeight;
 @property (nonatomic, retain) NSIndexPath*  indexPath;
 @property (nonatomic, retain) NSString*     slideToDeleteText;
+@property (nonatomic, retain) NSString*     cellTag;
 
 @property (nonatomic, readonly, getter = canSlideToDelete) BOOL slideToDelete;
 @property (nonatomic, getter = canBeSelected, setter = setSelectable:) BOOL isSelectable;
@@ -29,6 +30,8 @@
 
 // You can init with the selected block already set
 - (id)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier selectBlock:(void (^)(INTableViewCell*))block;
+
+- (id)cellWithTag:(NSString*)tag;
 
 // Allow you to activate the action when you slide right to the cell and it bring the red button that say "Delete"
 // Then assign an action that will be called when the animation of deleting the cell is finished
@@ -56,7 +59,7 @@
 + (INTableViewCell*)defaultCellWithTitle:(NSString*)title detailText:(NSString*)detail selectBlock:(void (^)(INTableViewCell*))block;
 
 // A basic cell with only a title and a subtitle text at the bottom of the cell
-+ (INTableViewCell*)subtitleCellWithTitle:(NSString*)title subtitleText:(NSString*)sub selectBlock:(void (^)(INTableViewCell*))block;
++ (INTableViewCell*)subtitledCellWithTitle:(NSString*)title subtitleText:(NSString*)sub selectBlock:(void (^)(INTableViewCell*))block;
 
 // A basic cell with only a title. But centered and colored in blue
 + (INTableViewCell*)actionCellWithTitle:(NSString*)title selectBlock:(void (^)(INTableViewCell*))block;
@@ -65,6 +68,6 @@
 + (INTableViewCell*)pushCellWithTitle:(NSString*)title subtitleText:(NSString*)sub selectBlock:(void (^)(INTableViewCell*))block;
 
 // A cell with a title a subtitle and the imageView of the cell set with the image name
-+ (INTableViewCell*)imageCellWithImageNamed:(NSString*)image withTitle:(NSString*)title andDetailText:(NSString*)detail selectBlock:(void (^)(INTableViewCell*))block;
++ (INTableViewCell*)imageCellWithImage:(UIImage*)image title:(NSString*)title detailText:(NSString*)detail selectBlock:(void (^)(INTableViewCell*))block;
 
 @end

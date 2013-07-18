@@ -10,6 +10,7 @@
 #import "INTableViewCell.h"
 
 #define INTableViewTextCellIdentifier @"Text"
+#define INTEXTCELL_PROMPT_ALPHA 0.3f
 
 @protocol INTableViewTextCellDelegate;
 
@@ -18,6 +19,8 @@
 
 @property(nonatomic, assign, getter = canBeEdited) BOOL isEditable;
 @property (assign, nonatomic) BOOL                      expendWhenTextChanges;
+
+@property (nonatomic, retain) NSString*                 prompt;
 
 @property(nonatomic, retain) IBOutlet UITextView*       textView;
 
@@ -28,5 +31,6 @@
 - (id)initEditable:(BOOL)edit;
 
 + (INTableViewTextCell*)textCellWithText:(NSString*)text editable:(BOOL)ed;
++ (INTableViewTextCell *)textCellWithPrompt:(NSString *)prompt;
 
 @end

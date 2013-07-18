@@ -3,19 +3,19 @@
 <plist version="1.0">
 <dict>
 	<key>IDESourceControlProjectIdentifier</key>
-	<string>47DEBC30-FAED-40F3-B5AF-78CC44250288</string>
+	<string>BBC219D7-35CC-4394-8D36-C4D7A7C35A9C</string>
 	<key>IDESourceControlProjectName</key>
 	<string>Demo</string>
 	<key>IDESourceControlProjectOriginsDictionary</key>
 	<dict>
-		<key>BC818A6B-BDB3-47FB-9674-7CD0EA697E17</key>
+		<key>2A1532C2-BEBF-4A50-B2BB-48A96D636A36</key>
 		<string>https://github.com/bartaba666/INTableView.git</string>
 	</dict>
 	<key>IDESourceControlProjectPath</key>
 	<string>Demo/Demo.xcodeproj/project.xcworkspace</string>
 	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
 	<dict>
-		<key>BC818A6B-BDB3-47FB-9674-7CD0EA697E17</key>
+		<key>2A1532C2-BEBF-4A50-B2BB-48A96D636A36</key>
 		<string>../../..</string>
 	</dict>
 	<key>IDESourceControlProjectURL</key>
@@ -23,14 +23,14 @@
 	<key>IDESourceControlProjectVersion</key>
 	<integer>110</integer>
 	<key>IDESourceControlProjectWCCIdentifier</key>
-	<string>BC818A6B-BDB3-47FB-9674-7CD0EA697E17</string>
+	<string>2A1532C2-BEBF-4A50-B2BB-48A96D636A36</string>
 	<key>IDESourceControlProjectWCConfigurations</key>
 	<array>
 		<dict>
 			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
 			<string>public.vcs.git</string>
 			<key>IDESourceControlWCCIdentifierKey</key>
-			<string>BC818A6B-BDB3-47FB-9674-7CD0EA697E17</string>
+			<string>2A1532C2-BEBF-4A50-B2BB-48A96D636A36</string>
 			<key>IDESourceControlWCCName</key>
 			<string>INTableView</string>
 		</dict>

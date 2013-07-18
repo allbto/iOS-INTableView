@@ -28,6 +28,7 @@ static NSString* DEFAULT_CELL_SLIDE_TO_DELETE_TEXT = nil;
         DEFAULT_CELL_SLIDE_TO_DELETE_TEXT = NSLocalizedString(@"Delete", @"The localized text for delete. Used for INTableViewCell's slide to delete text");
     
     _fromTableView = nil;
+    _cellTag = @"";
     self.cellHeight = DEFAULT_CELL_HEIGHT;
     self.indexPath = [NSIndexPath indexPathForRow:0 inSection:0];
     _slideToDelete = NO;
@@ -91,6 +92,10 @@ static NSString* DEFAULT_CELL_SLIDE_TO_DELETE_TEXT = nil;
     // As they say, the dealloc is called when the class is being destroyed, so it can bring problems if you call a setter
     // Anyway, I rather do it the perfect way so :
 
+    if (_cellTag)
+        [_cellTag release];
+    _cellTag = nil;
+    
     if (_indexPath)
         [_indexPath release];
     _indexPath = nil;
@@ -115,7 +120,21 @@ static NSString* DEFAULT_CELL_SLIDE_TO_DELETE_TEXT = nil;
     [super dealloc];
 }
 
+- (id)cellWithTag:(NSString*)tag
+{
+    self.cellTag = tag;
+    return self;
+}
+
 #pragma mark - Setters/Getters
+
+-(void)setCellTag:(NSString *)tag
+{
+    if (!tag || ![tag isKindOfClass:[NSString class]])
+        tag = @"";
+    [_cellTag release];
+    _cellTag = [tag retain];
+}
 
 - (void)belongToTableView:(INTableView *)tableView
 {
@@ -172,11 +191,11 @@ static NSString* DEFAULT_CELL_SLIDE_TO_DELETE_TEXT = nil;
     return cell;
 }
 
-+ (INTableViewCell*)subtitleCellWithTitle:(NSString*)title subtitleText:(NSString*)sub selectBlock:(void (^)(INTableViewCell*))block 
++ (INTableViewCell*)subtitledCellWithTitle:(NSString*)title subtitleText:(NSString*)sub selectBlock:(void (^)(INTableViewCell*))block
 {
     INTableViewCell *cell = [[INTableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:@"Subtitled" selectBlock:block];
     
-    cell.textLabel.text = ([title isKindOfClass:[NSNull class]] ? @"" : title);
+    cell.textLabel.text = (!title || ![title isKindOfClass:[NSString class]] ? @"" : title);
     cell.detailTextLabel.text = ([sub isKindOfClass:[NSNull class]] ? @"" : sub);
     if (!block)
         cell.selectionStyle = UITableViewCellSelectionStyleNone;
@@ -197,7 +216,7 @@ static NSString* DEFAULT_CELL_SLIDE_TO_DELETE_TEXT = nil;
 
 + (INTableViewCell*)pushCellWithTitle:(NSString*)title subtitleText:(NSString*)sub selectBlock:(void (^)(INTableViewCell*))block
 {
-    INTableViewCell *cell = [INTableViewCell subtitleCellWithTitle:title subtitleText:sub selectBlock:block];
+    INTableViewCell *cell = [INTableViewCell subtitledCellWithTitle:title subtitleText:sub selectBlock:block];
     
     cell.textLabel.textAlignment = NSTextAlignmentLeft;
     cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
@@ -205,10 +224,10 @@ static NSString* DEFAULT_CELL_SLIDE_TO_DELETE_TEXT = nil;
     return [cell autorelease];
 }
 
-+ (INTableViewCell*)imageCellWithImageNamed:(NSString*)image withTitle:(NSString*)title andDetailText:(NSString*)detail selectBlock:(void (^)(INTableViewCell*))block
++ (INTableViewCell*)imageCellWithImage:(UIImage*)image title:(NSString*)title detailText:(NSString*)detail selectBlock:(void (^)(INTableViewCell*))block
 {
-    INTableViewCell *cell = [INTableViewCell subtitleCellWithTitle:title subtitleText:detail selectBlock:block];
-    cell.imageView.image = [UIImage imageNamed:image];
+    INTableViewCell *cell = [INTableViewCell subtitledCellWithTitle:title subtitleText:detail selectBlock:block];
+    cell.imageView.image = image;
     return cell;
 }
 
@@ -220,6 +239,21 @@ static NSString* DEFAULT_CELL_SLIDE_TO_DELETE_TEXT = nil;
 
     self.textLabel.backgroundColor = [UIColor clearColor];
     self.detailTextLabel.backgroundColor = [UIColor clearColor];
+}
+
+- (BOOL)isFirstResponder
+{
+    return [super isFirstResponder];
+}
+
+- (BOOL)becomeFirstResponder
+{
+    return [super becomeFirstResponder];
+}
+
+- (BOOL)resignFirstResponder
+{
+    return [super resignFirstResponder];
 }
 
 @end

@@ -38,6 +38,7 @@
 - (void)removeAllCells;
 
 // Cells infos
+- (INTableViewCell*)cellWithTag:(NSString*)tag;
 - (NSInteger)cellsCount;
 - (NSArray*)cells;
 - (INTableViewCell*)cellAtIndex:(NSUInteger)index;

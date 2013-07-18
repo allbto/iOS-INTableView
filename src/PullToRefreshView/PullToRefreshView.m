@@ -89,7 +89,7 @@
 		arrowImage = [[CALayer alloc] init];
 		arrowImage.frame = CGRectMake(10.0f, frame.size.height - 60.0f, 24.0f, 52.0f);
 		arrowImage.contentsGravity = kCAGravityResizeAspect;
-		arrowImage.contents = (id) [UIImage imageNamed:@"arrow"].CGImage;
+		arrowImage.contents = (id) [UIImage imageNamed:@"pullToRefresh_arrow"].CGImage;
         
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= 40000
 		if ([[UIScreen mainScreen] respondsToSelector:@selector(scale)]) {

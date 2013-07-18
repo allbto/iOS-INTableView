@@ -16,8 +16,6 @@
 @property (nonatomic, copy) void (^pullToRefreshBlock)(INTableView* tableView);
 @property (nonatomic, copy) void (^loadMoreBlock)(INTableView* tableView);
 
-@property (nonatomic, retain) PullToRefreshView* pullView;
-
 - (void)initializeTableView;
 
 @end
@@ -49,7 +47,7 @@
 - (void)setPullToRefresh:(BOOL)pullToRefresh withBlock:(void (^)(INTableView*))pullBlock
 {
     _pullToRefresh = pullToRefresh;
-    _pullView.hidden = !pullToRefresh;
+    _pullToRefreshView.hidden = !pullToRefresh;
     if (pullToRefresh && pullBlock)
         self.pullToRefreshBlock = pullBlock;
     else if (_pullToRefreshBlock)
@@ -64,10 +62,10 @@
     _loading = loading;
     if (loading && [self canPullToRefresh] && self.countOfCells == 0)
     {
-        [_pullView setState:PullToRefreshViewStateLoading];
+        [_pullToRefreshView setState:PullToRefreshViewStateLoading];
     }
     else
-        [_pullView finishedLoading];
+        [_pullToRefreshView finishedLoading];
 
     if (loading && (self.countOfCells > 0 || ![self canPullToRefresh]))
     {
@@ -91,12 +89,15 @@
     _loadMoreFromBottom = NO;
     _loading = NO;
     _pullToRefreshBlock = nil;
-    _pullView = nil;
+    _pullToRefreshView = nil;
     _loadMoreBlock = nil;
     
     _previousContentOffset = CGPointZero;
     _loadMoreLoadingCell = [[INTableViewLoadingCell loadingCell] retain];
     self.loadMoreLoadingCell.hidden = YES;
+    
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillShow:) name:UIKeyboardWillShowNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillHide:) name:UIKeyboardWillHideNotification object:nil];
 }
 
 - (id)init
@@ -164,6 +165,9 @@
     [self setPullToRefresh:NO withBlock:nil];
     [self setLoadMoreFromBottom:NO withBlock:nil];
     [_loadMoreLoadingCell release]; _loadMoreLoadingCell = nil;
+    
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+    
     [super dealloc];
 }
 
@@ -173,11 +177,13 @@
 {
     [super didMoveToSuperview];
     
-    _pullView = [[PullToRefreshView alloc] initWithScrollView:(UIScrollView *)self];
-    [_pullView setDelegate:self];
-    _pullView.hidden = !_pullToRefresh;
-    [self addSubview:_pullView];
+    _pullToRefreshView = [[PullToRefreshView alloc] initWithScrollView:(UIScrollView *)self];
+    [_pullToRefreshView setDelegate:self];
+    _pullToRefreshView.hidden = !_pullToRefresh;
+    [self addSubview:_pullToRefreshView];
 }
+
+#pragma mark - UIResponder
 
 - (BOOL)resignFirstResponder
 {
@@ -187,6 +193,17 @@
             [cell resignFirstResponder];
     }
     return [super resignFirstResponder];
+}
+
+- (INTableViewCell*)firstResponderCell
+{
+    for (INTableViewSection* section in self.tableViewSections)
+    {
+        for (INTableViewCell* cell in section.cells)
+            if ([cell isFirstResponder])
+                return cell;
+    }
+    return nil;
 }
 
 #pragma mark - Section Editing
@@ -362,7 +379,7 @@
 {
     while (self.tableViewSections.count > 0)
     {
-        INTableViewSection* section = [self.tableViewSections firstObject];
+        INTableViewSection* section = [self.tableViewSections objectAtIndex:0];
         
         [section removeAllCells];
         [self.tableViewSections removeObjectAtIndex:0];
@@ -426,6 +443,13 @@
 }
 
 #pragma mark - Cell infos
+
+- (INTableViewCell*)cellWithTag:(NSString*)tag inSection:(NSUInteger)section
+{
+    if (self.tableViewSections.count > section)
+        return [[self.tableViewSections objectAtIndex:section] cellWithTag:tag];
+    return nil;
+}
 
 - (INTableViewCell*)cellForRow:(NSUInteger)row inSection:(NSUInteger)section
 {
@@ -738,6 +762,27 @@
     if (!self.isLoading)
         return self.pullToRefresh;
     return NO;
+}
+
+#pragma mark - Keybord listener
+
+- (void)keyboardWillShow:(NSNotification *)note
+{
+    CGSize keyboardSize = [[[note userInfo] objectForKey:UIKeyboardFrameBeginUserInfoKey] CGRectValue].size;
+    // Step 2: Adjust the bottom content inset of your scroll view by the keyboard height.
+    UIEdgeInsets contentInsets = UIEdgeInsetsMake(0.0, 0.0, keyboardSize.height, 0.0);
+    self.contentInset = contentInsets;
+    self.scrollIndicatorInsets = contentInsets;
+
+    INTableViewCell* cell = [self firstResponderCell];
+    if (cell)
+        [self scrollToRowAtIndexPath:cell.indexPath atScrollPosition:UITableViewScrollPositionTop animated:YES];
+}
+
+- (void)keyboardWillHide:(NSNotification *)note
+{
+    self.contentInset = UIEdgeInsetsZero;
+    self.scrollIndicatorInsets = UIEdgeInsetsZero;
 }
 
 @end

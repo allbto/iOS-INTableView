@@ -105,11 +105,25 @@
 - (void)removeAllCells
 {
     for (INTableViewCell* cell in tableViewCells)
-        [cell release];
+    {
+        //[cell release]; //Fails in ARC project
+    }
     [tableViewCells removeAllObjects];
 }
 
 #pragma mark - Get infos about cells
+
+- (INTableViewCell*)cellWithTag:(NSString*)tag
+{
+    if (!tag || ![tag isKindOfClass:[NSString class]]) return nil;
+    
+    for (INTableViewCell* cell in tableViewCells)
+    {
+        if (cell.cellTag && cell.cellTag.length > 0 && [cell.cellTag isEqualToString:tag])
+            return cell;
+    }
+    return nil;
+}
 
 - (NSInteger)cellsCount
 {

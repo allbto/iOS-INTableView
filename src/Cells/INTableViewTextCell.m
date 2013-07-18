@@ -9,6 +9,12 @@
 #import "INTableViewTextCell.h"
 #import "INTableView.h"
 
+@interface INTableViewTextCell ()
+
+@property (nonatomic, assign) BOOL isPrompting;
+
+@end
+
 @implementation INTableViewTextCell
 
 #pragma mark - Setter/Getter
@@ -25,7 +31,19 @@
 {
     INTableViewTextCell* cell = [[INTableViewTextCell alloc] initEditable:ed];
     
+    if (!text || ![text isKindOfClass:[NSString class]])
+        text = @"";
     cell.textView.text = text;
+    return [cell autorelease];
+}
+
++ (INTableViewTextCell *)textCellWithPrompt:(NSString *)prompt
+{
+    INTableViewTextCell* cell = [[INTableViewTextCell alloc] initEditable:YES];
+    
+    if (!prompt || ![prompt isKindOfClass:[NSString class]])
+        prompt = @"";
+    cell.prompt = prompt;
     return [cell autorelease];
 }
 
@@ -45,6 +63,8 @@
         self.isEditable = NO;
         self.expendWhenTextChanges = NO;
 
+        self.prompt = @"";
+        _isPrompting = NO;
         _beginEditingBlock = nil;
         _endEditingBlock = nil;
         _textChangeBlock = nil;
@@ -94,13 +114,6 @@
     [super dealloc];
 }
 
-- (void)setSelected:(BOOL)selected animated:(BOOL)animated
-{
-    [super setSelected:selected animated:animated];
-
-    // Configure the view for the selected state
-}
-
 - (void)setExpendWhenTextChanges:(BOOL)expendWhenTextChanges
 {
     _expendWhenTextChanges = expendWhenTextChanges;
@@ -111,6 +124,25 @@
         _textView.frame = frame;
         self.cellHeight = _textView.contentSize.height;
         [self.fromTableView reloadData];
+    }
+}
+
+- (void)setPrompt:(NSString *)prompt
+{
+    [_prompt release];
+    
+    if (!prompt)
+    {
+        _prompt = nil;
+        return;
+    }
+    _prompt = [prompt retain];
+    
+    if (self.textView.text.length == 0 && _prompt.length > 0)
+    {
+        self.textView.textColor = [self.textView.textColor colorWithAlphaComponent:INTEXTCELL_PROMPT_ALPHA];
+        self.textView.text = _prompt;
+        self.isPrompting = YES;
     }
 }
 
@@ -131,9 +163,48 @@
 
 - (void)textViewDidChange:(UITextView *)aTextView
 {
+    if (self.isPrompting && ![aTextView.text isEqualToString:self.prompt])
+    {
+        self.textView.textColor = [self.textView.textColor colorWithAlphaComponent:1];
+        self.textView.text = [aTextView.text substringToIndex:1];
+        self.isPrompting = NO;
+    }
+    else if (self.textView.text.length == 0 && self.prompt.length > 0)
+    {
+        self.textView.textColor = [self.textView.textColor colorWithAlphaComponent:INTEXTCELL_PROMPT_ALPHA];
+        self.textView.text = _prompt;
+        self.textView.selectedRange = NSMakeRange(0, 0);
+        self.isPrompting = YES;
+    }
+
+
     self.expendWhenTextChanges = self.expendWhenTextChanges;
     if (_textChangeBlock)
         _textChangeBlock(self, aTextView.text);
+}
+
+- (void)textViewDidChangeSelection:(UITextView *)textView
+{
+    if (self.isPrompting && textView.selectedRange.location != 0)
+    {
+        self.textView.selectedRange = NSMakeRange(0, 0);
+    }
+}
+
+- (BOOL)resignFirstResponder
+{
+    return [self.textView resignFirstResponder];
+}
+
+- (BOOL)becomeFirstResponder
+{
+    [super becomeFirstResponder];
+    return [self.textView becomeFirstResponder];
+}
+
+- (BOOL)isFirstResponder
+{
+    return [self.textView isFirstResponder];
 }
 
 @end

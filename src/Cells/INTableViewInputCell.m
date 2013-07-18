@@ -14,10 +14,22 @@
 {
     INTableViewInputCell *cell = [[INTableViewInputCell alloc] init];
     if (!title || [title isKindOfClass:[NSNull class]])
-        title = @"";
+    {
+        CGRect r = cell.frame;
+        r.size.width -= 8;
+        r.origin.x = 4;
+        cell.textField.frame = r;
+    }
+    else if ([title isKindOfClass:[NSString class]])
+    {
+        cell.textLabel.text = title;
+        CGRect r = cell.textLabel.frame;
+        r.size.width = 138;
+        cell.textLabel.frame = r;
+    }
+
     if (!prompt || [prompt isKindOfClass:[NSNull class]])
         prompt = @"";
-    cell.textLabel.text = title;
     cell.textField.placeholder = prompt;
     return [cell autorelease];
 }
@@ -34,7 +46,7 @@
     
     if (self)
     {
-        self.cellHeight = DEFAULT_CELL_HEIGHT;
+        self.cellHeight = self.frame.size.height;
         self.textField.delegate = self;
 
         _beginEditingBlock = nil;
@@ -77,13 +89,6 @@
     [super dealloc];
 }
 
-- (void)setSelected:(BOOL)selected animated:(BOOL)animated
-{
-    [super setSelected:selected animated:animated];
-
-    // Configure the view for the selected state
-}
-
 - (BOOL)textFieldShouldReturn:(UITextField *)textField
 {
     if (_returnBlock)
@@ -108,6 +113,23 @@
 {
     if (_endEditingBlock)
         _endEditingBlock(self);
+}
+
+- (BOOL)resignFirstResponder
+{
+    [super resignFirstResponder];
+    return [self.textField resignFirstResponder];
+}
+
+- (BOOL)becomeFirstResponder
+{
+    [super becomeFirstResponder];
+    return [self.textField becomeFirstResponder];
+}
+
+- (BOOL)isFirstResponder
+{
+    return [self.textField isFirstResponder];
 }
 
 @end

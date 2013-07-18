@@ -18,29 +18,42 @@
 {
     [super viewDidLoad];
 
-    // Start by setting the target, it works like a delegate, but the var 'delegate' was already taken by the UITableView so it was confusing
-    self.tableView.target = self;
-
-    // You can also create a UITableView and assign it to our INTableView like that
-    //self.tableView = [[INTableView alloc] initWithTableView:{The UITableView} target:self];
-    // This is the old way, I used it because I had some problem with XIB file and INTableView, but it's fixed now
+    // Start by setting the indelegate, it works like a delegate, but the var 'delegate' was already taken by the UITableView so it was confusing
+    self.tableView.indelegate = self;
     
     // By calling this method you allow the tableView to have a pullToRefresh View and to call this block when the user reloads it
     [self.tableView setPullToRefresh:YES withBlock:^(INTableView *tableView) {
         NSLog(@"Did Pull to Refresh");
         
-        // Once you're over with your download and stuffs don't forget to call :
+        // Once you're over with your downloads and stuffs don't forget to call :
         tableView.loading = NO;
     }];
     
     //
     // Here we begin to put cells into our tableView
     //
-    [self.tableView addCell:[INTableViewCell defaultCellWithTitle:@"Title" detailText:@"Detail" selectBlock:^(INTableViewCell *cell) {
+    
+    // First let's create a section to hold the default cells
+    // Note: If you use -addCell: without creating a section first, INTableView creates one for you
+    [self.tableView addSectionWithTitle:@"Default cells" andFooter:nil];
+
+    // Now we add a default cell with a selection block that change the title
+    [self.tableView addCell:[INTableViewCell defaultCellWithTitle:@"Default Title" detailText:@"Default Detail" selectBlock:^(INTableViewCell *cell) {
         cell.textLabel.text = [[NSDate date] description];
     }]];
-    [self.tableView addCell:[INTableViewInputCell inputCellWithTitle:@"Title" prompt:@"Prompt"]];
-    //[self.tableView addCell:<#(INTableViewCell *)#>]
+
+    // There is all of the default cells available in INTableViewCell.h
+    [self.tableView addCell:[INTableViewCell subtitledCellWithTitle:@"Subtitled Title" subtitleText:@"Subtitled Subtitle" selectBlock:nil]];
+    [self.tableView addCell:[INTableViewCell actionCellWithTitle:@"Action Title" selectBlock:nil]];
+    [self.tableView addCell:[INTableViewCell pushCellWithTitle:@"Push Title" subtitleText:@"Push Subtitle" selectBlock:^(INTableViewCell *cell) {
+        NSLog(@"Did use push cell"); 
+    }]];
+    [self.tableView addCell:[INTableViewCell imageCellWithImage:[UIImage imageNamed:@"happy-cat.jpg"] title:@"Image Title" detailText:@"Image detail" selectBlock:nil]];
+
+    // Now the second section. The other built in cells
+    [self.tableView addSectionWithTitle:@"Other cells" andFooter:nil];
+
+    [self.tableView addCell:[INTableViewInputCell inputCellWithTitle:@"Input Title" prompt:@"Prompt"]];
     [self.tableView addCell:[INTableViewSwitchCell defaultCell]];
     [self.tableView addCell:[INTableViewLoadingCell loadingCell]];
     //INTableViewTextCell* textCell = [INTableViewTextCell textCellWithText:@"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque dictum eros id nunc iaculis ultricies. Aenean at purus tortor. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Quisque sit amet arcu nisi. Donec aliquam diam non lectus feugiat a ultrices tellus hendrerit. Curabitur tincidunt interdum arcu ut porttitor. Mauris eget ante sapien, at eleifend lorem. Nunc sem risus, tempus ac sodales vel, vulputate ac lacus. Sed eget lacus orci. Phasellus quis felis quis erat scelerisque ultricies quis vel turpis. Donec sapien arcu, pharetra vel posuere vitae, malesuada eu sem. Integer nisl urna, rutrum ut sodales at, convallis a felis." editable:YES];

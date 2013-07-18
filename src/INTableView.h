@@ -36,6 +36,8 @@
 // Default : NO
 @property (nonatomic, assign, getter = sidebarIsShown) BOOL showSidebar;
 
+@property (nonatomic, retain, readonly) PullToRefreshView* pullToRefreshView;
+
 // Use -setPullToRefresh:withBlock: to allow the user to pull to refresh the tableView with the right callback
 // Default : NO
 @property (nonatomic, readonly, getter = canPullToRefresh) BOOL pullToRefresh;
@@ -96,6 +98,7 @@
 - (void)moveCellToLastIndexPath:(INTableViewCell*)cell;
 
 // Cells infos
+- (INTableViewCell*)cellWithTag:(NSString*)tag inSection:(NSUInteger)section;
 - (INTableViewCell*)cellForRow:(NSUInteger)row inSection:(NSUInteger)section;
 - (NSArray*)cellsInSection:(NSUInteger)section;
 - (NSUInteger)countOfCellsInSection:(NSUInteger)section;
@@ -104,9 +107,14 @@
 - (NSUInteger)numberOfCellsInSection:(NSUInteger)section;
 - (NSUInteger)numberOfCells;
 
-// TableView Method
+// TableView Methods
 - (void)scrollToTopAnimated:(BOOL)animated;
 - (void)scrollToBottomAnimated:(BOOL)animated;
+
+// UIResponder Methods
+- (BOOL)resignFirstResponder;
+- (INTableViewCell*)firstResponderCell;
+
 
 @end
 
