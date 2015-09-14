@@ -1,7 +1,7 @@
 INTableView
 ===========
 
-Simplify the Apple's UITableView Usage, by creating easy to use TableViews and Cells
+[Deprecated] Used to simplify the Apple's UITableView Usage, by creating easy to use TableViews and Cells
 
 A simple usage :
 
@@ -32,6 +32,3 @@ Will produce :
 
 ![ScreenShot](https://github.com/bartaba666/INTableView/blob/master/Demo/Demo/ScreenShot.png?raw=true)
 
-===========
-
-This is in development, nothing finished yet. A demo will come soon.
