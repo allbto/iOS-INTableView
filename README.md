@@ -1,7 +1,7 @@
 INTableView
 ===========
 
-[Deprecated] Used to simplify the Apple's UITableView Usage, by creating easy to use TableViews and Cells
+[Deprecated] Used to simplify the Apple's UITableView Usage, by creating easy to use Static TableViews and Cells
 
 A simple usage :
 
